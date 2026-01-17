@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ChatMessage, Message } from "@/app/components/ChatMessage";
 import { ChannelList, Channel } from "@/app/components/ChannelList";
 import { UserList, User } from "@/app/components/UserList";
 import { ChatInput } from "@/app/components/ChatInput";
-import { Keyboard } from "@capacitor/keyboard";
 
 // Mock data
 const mockChannels: Channel[] = [
@@ -113,8 +113,10 @@ export default function HomeContent() {
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
 
-  // Handle keyboard show/hide for iOS
+  // Handle keyboard show/hide for iOS (native only)
   useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
     let showListener:
       | Promise<import("@capacitor/core").PluginListenerHandle>
       | undefined;
@@ -123,16 +125,13 @@ export default function HomeContent() {
       | undefined;
 
     const setupKeyboardListeners = async () => {
-      try {
-        showListener = Keyboard.addListener("keyboardWillShow", (info) => {
-          setKeyboardHeight(info.keyboardHeight);
-        });
-        hideListener = Keyboard.addListener("keyboardWillHide", () => {
-          setKeyboardHeight(0);
-        });
-      } catch {
-        // Keyboard plugin not available (web)
-      }
+      const { Keyboard } = await import("@capacitor/keyboard");
+      showListener = Keyboard.addListener("keyboardWillShow", (info) => {
+        setKeyboardHeight(info.keyboardHeight);
+      });
+      hideListener = Keyboard.addListener("keyboardWillHide", () => {
+        setKeyboardHeight(0);
+      });
     };
 
     setupKeyboardListeners();
@@ -257,6 +256,7 @@ export default function HomeContent() {
           <ChatInput
             onSendMessage={handleSendMessage}
             channelName={activeChannel?.name || "lobby"}
+            keyboardVisible={keyboardHeight > 0}
           />
         </main>
 

@@ -3,9 +3,14 @@ import { useState, KeyboardEvent } from "react";
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
   channelName: string;
+  keyboardVisible?: boolean;
 }
 
-export function ChatInput({ onSendMessage, channelName }: ChatInputProps) {
+export function ChatInput({
+  onSendMessage,
+  channelName,
+  keyboardVisible,
+}: ChatInputProps) {
   const [input, setInput] = useState("");
 
   const handleSend = () => {
@@ -24,7 +29,9 @@ export function ChatInput({ onSendMessage, channelName }: ChatInputProps) {
   };
 
   return (
-    <div className="flex items-center gap-1 px-1 py-1 bg-irc-bg border-t border-irc-border safe-area-bottom">
+    <div
+      className={`flex items-center gap-1 px-1 py-1 bg-irc-bg border-t border-irc-border ${keyboardVisible ? "" : "safe-area-bottom"}`}
+    >
       <span className="text-irc-cyan shrink-0">[#{channelName}]</span>
       <input
         type="text"

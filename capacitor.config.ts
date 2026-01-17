@@ -1,9 +1,19 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const devConfig: CapacitorConfig = {
+const baseConfig = {
   appId: "com.anomalous.chat",
   appName: "Anomalous",
   webDir: "out",
+  plugins: {
+    Keyboard: {
+      resize: "none" as const,
+      resizeOnFullScreen: false,
+    },
+  },
+};
+
+const devConfig: CapacitorConfig = {
+  ...baseConfig,
   server: {
     // Use your machine's local IP so the simulator can reach the dev server
     // Update this if your IP changes (run: ipconfig getifaddr en0)
@@ -13,9 +23,7 @@ const devConfig: CapacitorConfig = {
 };
 
 const prodConfig: CapacitorConfig = {
-  appId: "com.anomalous.chat",
-  appName: "Anomalous",
-  webDir: "out",
+  ...baseConfig,
   server: {
     androidScheme: "https",
   },
