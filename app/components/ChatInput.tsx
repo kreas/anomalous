@@ -1,6 +1,4 @@
 import { useState, KeyboardEvent } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -26,21 +24,18 @@ export function ChatInput({ onSendMessage, channelName }: ChatInputProps) {
   };
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-irc-input-bg border-t border-irc-border safe-area-bottom">
-      <span className="text-irc-timestamp text-sm hidden sm:inline">
-        [{channelName}]
-      </span>
-      <Input
+    <div className="flex items-center gap-1 px-1 py-1 bg-irc-bg border-t border-irc-border safe-area-bottom">
+      <span className="text-irc-cyan shrink-0">[#{channelName}]</span>
+      <input
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
-        className="flex-1 bg-transparent border-irc-border focus-visible:ring-ring placeholder:text-irc-timestamp"
+        placeholder=""
+        className="flex-1 bg-transparent text-irc-white outline-none placeholder:text-irc-timestamp text-base"
+        autoComplete="off"
+        spellCheck={false}
       />
-      <Button onClick={handleSend} disabled={!input.trim()} size="sm">
-        Send
-      </Button>
     </div>
   );
 }

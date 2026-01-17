@@ -4,62 +4,88 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-    /* IRC Theme Colors */
-    --irc-sidebar-bg: #16162a;
-    --irc-input-bg: #0f0f1a;
-    --irc-border: #2a2a4a;
-    --irc-timestamp: #6a6a8a;
-    --irc-username-1: #ff6b6b;
-    --irc-username-2: #4ecdc4;
-    --irc-username-3: #ffe66d;
-    --irc-username-4: #a29bfe;
-    --irc-username-5: #fd79a8;
-    --irc-username-6: #00b894;
-    --irc-system: #6a6a8a;
-    --irc-join: #00d4aa;
-    --irc-leave: #ff6b6b;
+    /* Terminal IRC Theme Colors - WeeChat inspired */
+    --irc-bg: #000000;
+    --irc-sidebar-bg: #0a0a0a;
+    --irc-input-bg: #0a0a0a;
+    --irc-border: #1a1a1a;
+    --irc-timestamp: #555555;
+    --irc-cyan: #00d7d7;
+    --irc-yellow: #d7d700;
+    --irc-magenta: #d75fd7;
+    --irc-white: #c0c0c0;
+    --irc-bright-white: #ffffff;
+    --irc-green: #00d700;
+    --irc-red: #d70000;
+    --irc-blue: #5f87d7;
 
-    /* shadcn/ui base variables */
-    --radius: 0.625rem;
-    --background: #0a0a14;
-    --foreground: #e0e0f0;
-    --card: #16162a;
-    --card-foreground: #e0e0f0;
-    --popover: #16162a;
-    --popover-foreground: #e0e0f0;
-    --primary: #e0e0f0;
-    --primary-foreground: #0a0a14;
-    --secondary: #2a2a4a;
-    --secondary-foreground: #e0e0f0;
-    --muted: #2a2a4a;
-    --muted-foreground: #6a6a8a;
-    --accent: #2a2a4a;
-    --accent-foreground: #e0e0f0;
-    --destructive: #ff6b6b;
-    --border: #2a2a4a;
-    --input: #0f0f1a;
-    --ring: #4ecdc4;
-    --chart-1: #ff6b6b;
-    --chart-2: #4ecdc4;
-    --chart-3: #ffe66d;
-    --chart-4: #a29bfe;
-    --chart-5: #fd79a8;
-    --sidebar: #16162a;
-    --sidebar-foreground: #e0e0f0;
-    --sidebar-primary: #4ecdc4;
-    --sidebar-primary-foreground: #0a0a14;
-    --sidebar-accent: #2a2a4a;
-    --sidebar-accent-foreground: #e0e0f0;
-    --sidebar-border: #2a2a4a;
-    --sidebar-ring: #4ecdc4;
+    /* Username colors - cyan variations like WeeChat */
+    --irc-username-1: #00d7d7;
+    --irc-username-2: #00afaf;
+    --irc-username-3: #00d7af;
+    --irc-username-4: #5fd7d7;
+    --irc-username-5: #5fafaf;
+    --irc-username-6: #87d7d7;
+
+    /* System message colors */
+    --irc-system: #555555;
+    --irc-join: #00d700;
+    --irc-leave: #d70000;
+    --irc-action: #d75fd7;
+    --irc-nick-change: #d75fd7;
+    --irc-channel: #00d7d7;
+    --irc-highlight: #d7d700;
+
+    /* shadcn/ui base variables - terminal dark */
+    --radius: 0;
+    --background: #000000;
+    --foreground: #c0c0c0;
+    --card: #0a0a0a;
+    --card-foreground: #c0c0c0;
+    --popover: #0a0a0a;
+    --popover-foreground: #c0c0c0;
+    --primary: #c0c0c0;
+    --primary-foreground: #000000;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #c0c0c0;
+    --muted: #1a1a1a;
+    --muted-foreground: #555555;
+    --accent: #1a1a1a;
+    --accent-foreground: #c0c0c0;
+    --destructive: #d70000;
+    --border: #1a1a1a;
+    --input: #0a0a0a;
+    --ring: #00d7d7;
+    --chart-1: #d70000;
+    --chart-2: #00d7d7;
+    --chart-3: #d7d700;
+    --chart-4: #d75fd7;
+    --chart-5: #00d700;
+    --sidebar: #0a0a0a;
+    --sidebar-foreground: #c0c0c0;
+    --sidebar-primary: #00d7d7;
+    --sidebar-primary-foreground: #000000;
+    --sidebar-accent: #1a1a1a;
+    --sidebar-accent-foreground: #c0c0c0;
+    --sidebar-border: #1a1a1a;
+    --sidebar-ring: #00d7d7;
 }
 
 @theme inline {
     /* IRC Custom Colors */
+    --color-irc-bg: var(--irc-bg);
     --color-irc-sidebar-bg: var(--irc-sidebar-bg);
     --color-irc-input-bg: var(--irc-input-bg);
     --color-irc-border: var(--irc-border);
     --color-irc-timestamp: var(--irc-timestamp);
+    --color-irc-cyan: var(--irc-cyan);
+    --color-irc-yellow: var(--irc-yellow);
+    --color-irc-magenta: var(--irc-magenta);
+    --color-irc-white: var(--irc-white);
+    --color-irc-bright-white: var(--irc-bright-white);
+    --color-irc-green: var(--irc-green);
+    --color-irc-red: var(--irc-red);
+    --color-irc-blue: var(--irc-blue);
     --color-irc-username-1: var(--irc-username-1);
     --color-irc-username-2: var(--irc-username-2);
     --color-irc-username-3: var(--irc-username-3);
@@ -69,6 +95,10 @@
     --color-irc-system: var(--irc-system);
     --color-irc-join: var(--irc-join);
     --color-irc-leave: var(--irc-leave);
+    --color-irc-action: var(--irc-action);
+    --color-irc-nick-change: var(--irc-nick-change);
+    --color-irc-channel: var(--irc-channel);
+    --color-irc-highlight: var(--irc-highlight);
 
     /* shadcn/ui Colors */
     --color-background: var(--background);
@@ -103,41 +133,32 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Radius */
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-2xl: calc(var(--radius) + 8px);
-    --radius-3xl: calc(var(--radius) + 12px);
-    --radius-4xl: calc(var(--radius) + 16px);
+    /* No border radius for terminal look */
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+    --radius-2xl: 0;
+    --radius-3xl: 0;
+    --radius-4xl: 0;
 
     /* Fonts */
-    --font-sans: var(--font-geist-sans);
+    --font-sans: var(--font-geist-mono);
     --font-mono: var(--font-geist-mono);
 }
 
 body {
-    font-family: var(--font-mono), ui-monospace, monospace;
+    font-family:
+        var(--font-mono), "Monaco", "Cascadia Code", "Consolas", ui-monospace,
+        monospace;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-/* Custom scrollbar for IRC feel */
+/* Hide scrollbars for terminal aesthetic */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--irc-sidebar-bg);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--irc-border);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--irc-timestamp);
+    width: 0;
+    height: 0;
 }
 
 /* Prevent text selection on UI elements */
