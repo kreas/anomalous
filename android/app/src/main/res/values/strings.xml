@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Anomalous</string>
+    <string name="title_activity_main">Anomalous</string>
+    <string name="package_name">com.anomalous.chat</string>
+    <string name="custom_url_scheme">com.anomalous.chat</string>
+</resources>

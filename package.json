@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ios": "next build && cap run ios --target 259C05ED-16A1-4D74-A867-439CBEAD9015",
+    "android": "next build && cap run android"
   },
   "dependencies": {
     "next": "16.1.3",
