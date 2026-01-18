@@ -47,3 +47,4 @@ Use `@/*` to import from the project root (configured in tsconfig.json).
 
 ### Server vs Client Components
 Components are server components by default. Add `'use client'` directive at the top of files that need client-side interactivity.
+
