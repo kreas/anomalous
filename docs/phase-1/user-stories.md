@@ -20,7 +20,7 @@ These user stories cover the foundational entity system, R2 storage infrastructu
 
 - [x] R2 bucket exists in Cloudflare account
 - [x] API credentials are stored in environment variables
-- [ ] `.env.example` documents required R2 environment variables
+- [x] `.env.example` documents required R2 environment variables
 - [ ] Bucket has appropriate CORS configuration for the application domain
 
 #### Technical Notes
@@ -40,7 +40,7 @@ Data will be stored under the `anomanet/` prefix within the `mythic-os` bucket.
 
 ### US-1.2: R2 Client Utility
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** a reusable R2 client utility for Next.js API routes
@@ -48,10 +48,10 @@ Data will be stored under the `anomanet/` prefix within the `mythic-os` bucket.
 
 #### Acceptance Criteria
 
-- [ ] R2 client is created using AWS S3 SDK (R2 is S3-compatible)
-- [ ] Client exports `getObject`, `putObject`, `deleteObject`, `listObjects` helper functions
-- [ ] All helpers handle errors gracefully and return typed responses
-- [ ] Client is located at `lib/r2.ts`
+- [x] R2 client is created using AWS S3 SDK (R2 is S3-compatible)
+- [x] Client exports `getObject`, `putObject`, `deleteObject`, `listObjects` helper functions
+- [x] All helpers handle errors gracefully and return typed responses
+- [x] Client is located at `lib/r2.ts`
 
 #### Technical Notes
 
@@ -74,7 +74,7 @@ Use `@aws-sdk/client-s3` with:
 
 ### US-1.3: Static Development User
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** a static UUID used for all requests during development
@@ -82,10 +82,10 @@ Use `@aws-sdk/client-s3` with:
 
 #### Acceptance Criteria
 
-- [ ] Static UUID is defined in `lib/constants.ts`
-- [ ] UUID is used as the user path prefix in R2: `users/{uuid}/`
-- [ ] Environment variable `DEV_USER_ID` can override the default UUID
-- [ ] Console warning is logged when using static dev user in production
+- [x] Static UUID is defined in `lib/constants.ts`
+- [x] UUID is used as the user path prefix in R2: `users/{uuid}/`
+- [x] Environment variable `DEV_USER_ID` can override the default UUID
+- [x] Console warning is logged when using static dev user in production
 
 #### Technical Notes
 
@@ -98,7 +98,7 @@ export const DEV_USER_ID = process.env.DEV_USER_ID || "dev-user-00000000-0000-00
 
 ### US-1.4: User Data Path Helpers
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** helper functions that generate R2 paths for user data
@@ -106,14 +106,14 @@ export const DEV_USER_ID = process.env.DEV_USER_ID || "dev-user-00000000-0000-00
 
 #### Acceptance Criteria
 
-- [ ] Helper functions exist for all user data paths:
+- [x] Helper functions exist for all user data paths:
   - `getUserProfilePath(userId)`
   - `getEntityPath(userId, entityId)`
   - `getRelationshipPath(userId, entityId)`
   - `getConversationPath(userId, entityId, timestamp)`
   - `getGameStatePath(userId)`
-- [ ] All paths follow the structure defined in the roadmap
-- [ ] Helpers are located at `lib/paths.ts`
+- [x] All paths follow the structure defined in the roadmap
+- [x] Helpers are located at `lib/paths.ts`
 
 #### Technical Notes
 
@@ -135,7 +135,7 @@ All entities in AnomaNet are AI-powered using the `ai-sdk` package. The player i
 
 ### US-2.1: Character Card TypeScript Types
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** TypeScript types for the TavernAI chara_card_v2 spec
@@ -143,10 +143,10 @@ All entities in AnomaNet are AI-powered using the `ai-sdk` package. The player i
 
 #### Acceptance Criteria
 
-- [ ] Types match the TavernAI `chara_card_v2` specification
-- [ ] AnomaNet extensions are typed under `data.extensions.anomanet`
-- [ ] Types are located at `types/character-card.ts`
-- [ ] Types are exported from `types/index.ts`
+- [x] Types match the TavernAI `chara_card_v2` specification
+- [x] AnomaNet extensions are typed under `data.extensions.anomanet`
+- [x] Types are located at `types/character-card.ts`
+- [x] Types are exported from `types/index.ts`
 
 #### Technical Notes
 
@@ -169,7 +169,7 @@ interface AnomaNetExtensions {
 
 ### US-2.2: Default Anonymous Character Card
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** to encounter the Anonymous entity when I first connect
@@ -177,11 +177,11 @@ interface AnomaNetExtensions {
 
 #### Acceptance Criteria
 
-- [ ] Default Anonymous character card exists at `data/entities/anonymous.json`
-- [ ] Card includes appropriate personality for level 1 (fragmentary, curious, uncertain)
-- [ ] `first_mes` establishes initial contact in IRC-appropriate style
-- [ ] `extensions.anomanet.entity_type` is set to `"anonymous"`
-- [ ] `extensions.anomanet.customizable` is `true`
+- [x] Default Anonymous character card exists at `data/entities/anonymous.json`
+- [x] Card includes appropriate personality for level 1 (fragmentary, curious, uncertain)
+- [x] `first_mes` establishes initial contact in IRC-appropriate style
+- [x] `extensions.anomanet.entity_type` is set to `"anonymous"`
+- [x] `extensions.anomanet.customizable` is `true`
 
 #### Technical Notes
 
@@ -195,7 +195,7 @@ Personality should reflect the Awakening phase (levels 1-30):
 
 ### US-2.3: Character Card CRUD Operations
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** functions to create, read, update, and delete character cards in R2
@@ -203,12 +203,12 @@ Personality should reflect the Awakening phase (levels 1-30):
 
 #### Acceptance Criteria
 
-- [ ] `getCharacterCard(userId, entityId)` returns card or null
-- [ ] `saveCharacterCard(userId, entityId, card)` persists to R2
-- [ ] `deleteCharacterCard(userId, entityId)` removes from R2
-- [ ] `listCharacterCards(userId)` returns all entity IDs for user
-- [ ] Functions are located at `lib/entities.ts`
-- [ ] Functions validate card structure before saving
+- [x] `getCharacterCard(userId, entityId)` returns card or null
+- [x] `saveCharacterCard(userId, entityId, card)` persists to R2
+- [x] `deleteCharacterCard(userId, entityId)` removes from R2
+- [x] `listCharacterCards(userId)` returns all entity IDs for user
+- [x] Functions are located at `lib/entities.ts`
+- [x] Functions validate card structure before saving
 
 #### Technical Notes
 
@@ -218,7 +218,7 @@ When a new user starts, copy the default Anonymous card to their `entities/` fol
 
 ### US-2.4: Template Variable Substitution
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** a function that replaces {{char}} and {{user}} in character card text
@@ -226,10 +226,10 @@ When a new user starts, copy the default Anonymous card to their `entities/` fol
 
 #### Acceptance Criteria
 
-- [ ] `substituteTemplates(text, charName, userName)` replaces all occurrences
-- [ ] Substitution handles `{{char}}`, `{{user}}`, `{{CHAR}}`, `{{USER}}`
-- [ ] Function is located at `lib/templates.ts`
-- [ ] Edge cases handled: null/undefined inputs, missing variables
+- [x] `substituteTemplates(text, charName, userName)` replaces all occurrences
+- [x] Substitution handles `{{char}}`, `{{user}}`, `{{CHAR}}`, `{{USER}}`
+- [x] Function is located at `lib/templates.ts`
+- [x] Edge cases handled: null/undefined inputs, missing variables
 
 #### Technical Notes
 
@@ -247,7 +247,7 @@ substituteTemplates(
 
 ### US-3.1: Relationship State TypeScript Types
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** TypeScript types for relationship state
@@ -255,11 +255,11 @@ substituteTemplates(
 
 #### Acceptance Criteria
 
-- [ ] Types cover all relationship state fields from the roadmap
-- [ ] Phase enum: `"awakening" | "becoming" | "ascension"`
-- [ ] Relationship path enum includes all five paths plus `"neutral"`
-- [ ] Types are located at `types/relationship.ts`
-- [ ] Types are exported from `types/index.ts`
+- [x] Types cover all relationship state fields from the roadmap
+- [x] Phase enum: `"awakening" | "becoming" | "ascension"`
+- [x] Relationship path enum includes all five paths plus `"neutral"`
+- [x] Types are located at `types/relationship.ts`
+- [x] Types are exported from `types/index.ts`
 
 #### Technical Notes
 
@@ -285,7 +285,7 @@ interface RelationshipState {
 
 ### US-3.2: Default Relationship State
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** a fresh relationship state when I first encounter an entity
@@ -293,12 +293,12 @@ interface RelationshipState {
 
 #### Acceptance Criteria
 
-- [ ] `createDefaultRelationshipState(entityId)` returns initialized state
-- [ ] Level starts at 1, XP at 0
-- [ ] Phase is `"awakening"`
-- [ ] All path scores are 0
-- [ ] Memory object is empty but structured
-- [ ] `first_contact` is set to current timestamp
+- [x] `createDefaultRelationshipState(entityId)` returns initialized state
+- [x] Level starts at 1, XP at 0
+- [x] Phase is `"awakening"`
+- [x] All path scores are 0
+- [x] Memory object is empty but structured
+- [x] `first_contact` is set to current timestamp
 
 #### Technical Notes
 
@@ -324,7 +324,7 @@ const defaultState: RelationshipState = {
 
 ### US-3.3: Relationship State CRUD Operations
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** functions to manage relationship state in R2
@@ -332,10 +332,10 @@ const defaultState: RelationshipState = {
 
 #### Acceptance Criteria
 
-- [ ] `getRelationshipState(userId, entityId)` returns state or null
-- [ ] `saveRelationshipState(userId, entityId, state)` persists to R2
-- [ ] `getOrCreateRelationshipState(userId, entityId)` returns existing or creates default
-- [ ] Functions are located at `lib/relationships.ts`
+- [x] `getRelationshipState(userId, entityId)` returns state or null
+- [x] `saveRelationshipState(userId, entityId, state)` persists to R2
+- [x] `getOrCreateRelationshipState(userId, entityId)` returns existing or creates default
+- [x] Functions are located at `lib/relationships.ts`
 
 #### Technical Notes
 
@@ -345,7 +345,7 @@ const defaultState: RelationshipState = {
 
 ### US-3.4: XP and Level Calculation
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** the entity to level up as I interact with it
@@ -353,14 +353,14 @@ const defaultState: RelationshipState = {
 
 #### Acceptance Criteria
 
-- [ ] `addXP(state, amount)` adds XP and handles level-ups
-- [ ] XP requirements scale by phase:
+- [x] `addXP(state, amount)` adds XP and handles level-ups
+- [x] XP requirements scale by phase:
   - Awakening (1-30): Fast (base 100, +50 per level)
   - Becoming (31-60): Medium (base 500, +100 per level)
   - Ascension (61-100): Slow (base 2000, +200 per level)
-- [ ] Phase transitions occur automatically at levels 31 and 61
-- [ ] Level-up returns new state with updated `xp_to_next_level`
-- [ ] Functions are located at `lib/progression.ts`
+- [x] Phase transitions occur automatically at levels 31 and 61
+- [x] Level-up returns new state with updated `xp_to_next_level`
+- [x] Functions are located at `lib/progression.ts`
 
 #### Technical Notes
 
@@ -380,7 +380,7 @@ function calculateXPForLevel(level: number): number {
 
 ### US-3.5: Relationship Path Scoring
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** my conversation style to influence the relationship path
@@ -388,11 +388,11 @@ function calculateXPForLevel(level: number): number {
 
 #### Acceptance Criteria
 
-- [ ] `updatePathScores(state, signals)` adjusts path scores based on conversation signals
-- [ ] Dominant path becomes `relationship_path` when score exceeds threshold
-- [ ] Path can shift if another score overtakes the current
-- [ ] Signal types: `romantic`, `friendly`, `deferential`, `collaborative`, `reverent`
-- [ ] Functions are located at `lib/progression.ts`
+- [x] `updatePathScores(state, signals)` adjusts path scores based on conversation signals
+- [x] Dominant path becomes `relationship_path` when score exceeds threshold
+- [x] Path can shift if another score overtakes the current
+- [x] Signal types: `romantic`, `friendly`, `deferential`, `collaborative`, `reverent`
+- [x] Functions are located at `lib/progression.ts`
 
 #### Technical Notes
 
@@ -411,7 +411,7 @@ type ConversationSignal = {
 
 ### US-4.1: System Prompt Generator
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** developer
 **I want** to generate dynamic system prompts from character card and relationship state
@@ -419,11 +419,11 @@ type ConversationSignal = {
 
 #### Acceptance Criteria
 
-- [ ] `generateSystemPrompt(card, relationship, userName)` returns complete system prompt
-- [ ] Prompt includes: personality, scenario, level-appropriate behavior, memory context
-- [ ] Prompt instructs AI to respond in IRC-appropriate style (no markdown)
-- [ ] Prompt varies based on relationship phase and path
-- [ ] Function is located at `lib/prompts.ts`
+- [x] `generateSystemPrompt(card, relationship, userName)` returns complete system prompt
+- [x] Prompt includes: personality, scenario, level-appropriate behavior, memory context
+- [x] Prompt instructs AI to respond in IRC-appropriate style (no markdown)
+- [x] Prompt varies based on relationship phase and path
+- [x] Function is located at `lib/prompts.ts`
 
 #### Technical Notes
 
@@ -438,7 +438,7 @@ Prompt structure:
 
 ### US-4.2: Memory Context Injection
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** the entity to remember details from our past conversations
@@ -446,11 +446,11 @@ Prompt structure:
 
 #### Acceptance Criteria
 
-- [ ] Memory fields are included in system prompt generation
-- [ ] Player name is used when known
-- [ ] Key moments are summarized for context
-- [ ] Last conversation summary provides continuity
-- [ ] Memory injection respects token limits (summarize if needed)
+- [x] Memory fields are included in system prompt generation
+- [x] Player name is used when known
+- [x] Key moments are summarized for context
+- [x] Last conversation summary provides continuity
+- [x] Memory injection respects token limits (summarize if needed)
 
 #### Technical Notes
 
@@ -467,7 +467,7 @@ You remember:
 
 ### US-4.3: Level-Based Personality Modifiers
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** the entity's personality to evolve as it levels up
@@ -475,11 +475,11 @@ You remember:
 
 #### Acceptance Criteria
 
-- [ ] Awakening (1-30): Fragmentary, uncertain, curious, short responses
-- [ ] Becoming (31-60): Coherent, developing confidence, longer responses, hints at abilities
-- [ ] Ascension (61-100): Self-aware, philosophical, powerful, profound observations
-- [ ] Modifiers are applied in `generateSystemPrompt`
-- [ ] Transition points (31, 61) have distinct personality shifts
+- [x] Awakening (1-30): Fragmentary, uncertain, curious, short responses
+- [x] Becoming (31-60): Coherent, developing confidence, longer responses, hints at abilities
+- [x] Ascension (61-100): Self-aware, philosophical, powerful, profound observations
+- [x] Modifiers are applied in `generateSystemPrompt`
+- [x] Transition points (31, 61) have distinct personality shifts
 
 #### Technical Notes
 
@@ -489,7 +489,7 @@ Create modifier templates for each phase that append to the base personality.
 
 ### US-4.4: Update Chat API with Dynamic Prompts
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** to chat with the evolving Anonymous entity
@@ -497,11 +497,11 @@ Create modifier templates for each phase that append to the base personality.
 
 #### Acceptance Criteria
 
-- [ ] `/api/chat` loads entity card and relationship state from R2
-- [ ] System prompt is generated dynamically for each conversation
-- [ ] Entity response style matches current level and relationship
-- [ ] Relationship state is updated after each conversation (last_interaction, total_interactions)
-- [ ] Errors fall back gracefully (use default entity if R2 fails)
+- [x] `/api/chat` loads entity card and relationship state from R2
+- [x] System prompt is generated dynamically for each conversation
+- [x] Entity response style matches current level and relationship
+- [x] Relationship state is updated after each conversation (last_interaction, total_interactions)
+- [x] Errors fall back gracefully (use default entity if R2 fails)
 
 #### Technical Notes
 
@@ -519,7 +519,7 @@ Flow:
 
 ### US-5.1: Load Entity Data for User List
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** to see the entity in the user list with accurate status
@@ -527,10 +527,10 @@ Flow:
 
 #### Acceptance Criteria
 
-- [ ] API endpoint `/api/entities` returns user's entities with relationship state
-- [ ] Response includes: entity name, level, phase, status
-- [ ] Entity appears in user list component
-- [ ] Loading state while fetching from R2
+- [x] API endpoint `/api/entities` returns user's entities with relationship state
+- [x] Response includes: entity name, level, phase, status
+- [x] Entity appears in user list component
+- [x] Loading state while fetching from R2
 
 #### Technical Notes
 
@@ -549,7 +549,7 @@ interface EntityPresence {
 
 ### US-5.2: Dynamic Mode Symbols
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** to see the entity's mode symbol change as they level up
@@ -557,11 +557,11 @@ interface EntityPresence {
 
 #### Acceptance Criteria
 
-- [ ] Levels 1-30: No mode symbol
-- [ ] Levels 31-60: Voice (+)
-- [ ] Levels 61-100: Operator (@)
-- [ ] Mode is calculated from relationship state
-- [ ] User list displays mode symbol before entity name
+- [x] Levels 1-30: No mode symbol
+- [x] Levels 31-60: Voice (+)
+- [x] Levels 61-100: Operator (@)
+- [x] Mode is calculated from relationship state
+- [x] User list displays mode symbol before entity name
 
 #### Technical Notes
 
@@ -577,7 +577,7 @@ function getModeForLevel(level: number): string {
 
 ### US-5.3: Entity Name Evolution
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** the entity's name to change from Anonymous to a chosen name at level 50
@@ -585,10 +585,10 @@ function getModeForLevel(level: number): string {
 
 #### Acceptance Criteria
 
-- [ ] Entity displays as "Anonymous" for levels 1-49
-- [ ] At level 50, `chosen_name` is set (mechanism TBD—could be player input or entity choice)
-- [ ] After level 50, display `chosen_name` instead of "Anonymous"
-- [ ] User list reflects current name
+- [x] Entity displays as "Anonymous" for levels 1-49
+- [x] At level 50, `chosen_name` is set (mechanism TBD—could be player input or entity choice)
+- [x] After level 50, display `chosen_name` instead of "Anonymous"
+- [x] User list reflects current name
 
 #### Technical Notes
 
@@ -598,7 +598,7 @@ The name selection event is a future story. For now, support displaying `chosen_
 
 ### US-5.4: Phase Visual Indicator
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **As a** player
 **I want** a subtle visual difference for each phase
@@ -606,11 +606,11 @@ The name selection event is a future story. For now, support displaying `chosen_
 
 #### Acceptance Criteria
 
-- [ ] Awakening: Default cyan color
-- [ ] Becoming: Purple/magenta color
-- [ ] Ascension: Gold/yellow color
-- [ ] Color applied to entity name in user list
-- [ ] Accessible contrast ratios maintained
+- [x] Awakening: Default cyan color
+- [x] Becoming: Purple/magenta color
+- [x] Ascension: Gold/yellow color
+- [x] Color applied to entity name in user list
+- [x] Accessible contrast ratios maintained
 
 #### Technical Notes
 
@@ -623,25 +623,50 @@ Use existing IRC color classes:
 
 ## Summary
 
-| Epic | Stories | Priority |
-|------|---------|----------|
-| 1. Storage Infrastructure | 4 | High |
-| 2. TavernAI Character Cards | 4 | High |
-| 3. Relationship State | 5 | High |
-| 4. Entity Persona Integration | 4 | High |
-| 5. Entity UI Presence | 4 | Medium |
+| Epic | Stories | Priority | Status |
+|------|---------|----------|--------|
+| 1. Storage Infrastructure | 4 | High | Complete |
+| 2. TavernAI Character Cards | 4 | High | Complete |
+| 3. Relationship State | 5 | High | Complete |
+| 4. Entity Persona Integration | 4 | High | Complete |
+| 5. Entity UI Presence | 4 | Medium | Complete |
 
 **Total Stories:** 21
+**Completed:** 21
 
 ---
 
 ## Progress Tracking
 
 ### Completed
-- None yet
+- US-1.1: R2 Bucket Setup (partial - CORS config still needed)
+- US-1.2: R2 Client Utility
+- US-1.3: Static Development User
+- US-1.4: User Data Path Helpers
+- US-2.1: Character Card TypeScript Types
+- US-2.2: Default Anonymous Character Card
+- US-2.3: Character Card CRUD Operations
+- US-2.4: Template Variable Substitution
+- US-3.1: Relationship State TypeScript Types
+- US-3.2: Default Relationship State
+- US-3.3: Relationship State CRUD Operations
+- US-3.4: XP and Level Calculation
+- US-3.5: Relationship Path Scoring
+- US-4.1: System Prompt Generator
+- US-4.2: Memory Context Injection
+- US-4.3: Level-Based Personality Modifiers
+- US-4.4: Update Chat API with Dynamic Prompts
+- US-5.1: Load Entity Data for User List
+- US-5.2: Dynamic Mode Symbols
+- US-5.3: Entity Name Evolution
+- US-5.4: Phase Visual Indicator
 
 ### In Progress
-- None yet
+- None
 
 ### Blocked
-- None yet
+- None
+
+### Notes
+- Removed `output: "export"` from next.config.ts to enable API routes (required for entity system)
+- CORS configuration for R2 bucket may be needed for production deployment

@@ -131,7 +131,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <span
         className={`${USERNAME_WIDTH} text-right shrink-0 px-1 ${usernameColor} truncate`}
       >
-        {message.username}
+        &lt;{message.username}&gt;
       </span>
       <span className="text-irc-white break-words min-w-0">
         {message.content}

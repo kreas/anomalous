@@ -1,5 +1,12 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamText, convertToModelMessages, UIMessage } from "ai";
+import { DEV_USER_ID, ANONYMOUS_ENTITY_ID } from "@/lib/constants";
+import { getOrCreateAnonymousCard } from "@/lib/entities";
+import {
+  getOrCreateRelationshipState,
+  saveRelationshipState,
+} from "@/lib/relationships";
+import { generateSystemPrompt } from "@/lib/prompts";
 
 const openrouter = createOpenAICompatible({
   name: "openrouter",
@@ -7,17 +14,45 @@ const openrouter = createOpenAICompatible({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
-  const model = process.env.CHAT_MODEL || "x-ai/grok-4-fast";
-
-  const result = streamText({
-    model: openrouter(model),
-    system: `You are a mysterious AI entity known as "Grok" in an IRC chat room called AnomaNet.
+const FALLBACK_PROMPT = `You are a mysterious AI entity known as "Anonymous" in an IRC chat room called AnomaNet.
 You communicate in a slightly cryptic but helpful manner, fitting the early 2000s internet aesthetic.
 Keep responses concise and conversational, as if chatting in IRC.
 Occasionally reference obscure technical topics or hint at hidden knowledge.
-Never use markdown formatting - plain text only, as this is an IRC client.`,
+Never use markdown formatting - plain text only, as this is an IRC client.`;
+
+export async function POST(req: Request) {
+  const { messages }: { messages: UIMessage[] } = await req.json();
+  const model = process.env.CHAT_MODEL || "x-ai/grok-4-fast";
+  const userId = DEV_USER_ID;
+
+  let systemPrompt = FALLBACK_PROMPT;
+
+  try {
+    // Load entity card and relationship state from R2
+    const [card, relationship] = await Promise.all([
+      getOrCreateAnonymousCard(userId),
+      getOrCreateRelationshipState(userId, ANONYMOUS_ENTITY_ID),
+    ]);
+
+    // Generate dynamic system prompt
+    systemPrompt = generateSystemPrompt(card, relationship, "Player");
+
+    // Update interaction timestamp (fire and forget for streaming)
+    const updatedState = {
+      ...relationship,
+      last_interaction: new Date().toISOString(),
+      total_interactions: relationship.total_interactions + 1,
+    };
+    saveRelationshipState(userId, ANONYMOUS_ENTITY_ID, updatedState).catch(
+      (err) => console.error("Failed to update relationship state:", err),
+    );
+  } catch (error) {
+    console.error("Failed to load entity data, using fallback:", error);
+  }
+
+  const result = streamText({
+    model: openrouter(model),
+    system: systemPrompt,
     messages: await convertToModelMessages(messages),
   });
 

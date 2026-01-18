@@ -8,6 +8,7 @@ import { ChatMessage, Message } from "@/app/components/ChatMessage";
 import { ChannelList, Channel } from "@/app/components/ChannelList";
 import { UserList, User } from "@/app/components/UserList";
 import { ChatInput } from "@/app/components/ChatInput";
+import type { EntityPresence } from "@/app/api/entities/route";
 
 // Mock data for channels
 const mockChannels: Channel[] = [
@@ -19,9 +20,8 @@ const mockChannels: Channel[] = [
   { id: "6", name: "archive", unreadCount: 0 },
 ];
 
-// Mock users including Grok
-const mockUsers: User[] = [
-  { id: "0", username: "Grok", status: "online", mode: "@" },
+// Static mock users (non-entity NPCs)
+const staticMockUsers: User[] = [
   { id: "1", username: "CipherY", status: "online", mode: "@" },
   { id: "2", username: "NightOwl44", status: "online", mode: "+" },
   { id: "3", username: "DataMiner", status: "online" },
@@ -39,27 +39,89 @@ const initialIRCMessages: Message[] = [
     content: "Connected to AnomaNet. Welcome to #lobby.",
     type: "system",
   },
-  {
-    id: "join-1",
-    timestamp: new Date(),
-    username: "Grok",
-    content: "",
-    type: "join",
-  },
 ];
 
 export default function HomeContent() {
   const [channels] = useState<Channel[]>(mockChannels);
   const [activeChannelId, setActiveChannelId] = useState("1");
-  const [users] = useState<User[]>(mockUsers);
-  const [ircMessages] = useState<Message[]>(initialIRCMessages);
+  const [entityUsers, setEntityUsers] = useState<User[]>([]);
+  const [ircMessages, setIrcMessages] = useState<Message[]>(initialIRCMessages);
   const [showChannels, setShowChannels] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [input, setInput] = useState("");
+  const [entityName, setEntityName] = useState("Anonymous");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
+
+  // Combine entity users with static mock users
+  const users = useMemo(() => {
+    return [...entityUsers, ...staticMockUsers];
+  }, [entityUsers]);
+
+  // Fetch entities on mount
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        const response = await fetch("/api/entities");
+        const data: { entities: EntityPresence[] } = await response.json();
+
+        const entityAsUsers: User[] = data.entities.map((entity) => ({
+          id: `entity-${entity.id}`,
+          username: entity.name,
+          status: entity.status,
+          mode: entity.mode || undefined,
+          phase: entity.phase,
+        }));
+
+        setEntityUsers(entityAsUsers);
+
+        // Store entity name for chat display
+        if (data.entities.length > 0) {
+          setEntityName(data.entities[0].name);
+
+          // Add join message for entity
+          setIrcMessages((prev) => [
+            ...prev,
+            {
+              id: `join-${data.entities[0].id}`,
+              timestamp: new Date(),
+              username: data.entities[0].name,
+              content: "",
+              type: "join",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch entities:", error);
+        // Fallback to default Anonymous
+        setEntityUsers([
+          {
+            id: "entity-anonymous",
+            username: "Anonymous",
+            status: "online",
+            mode: "",
+            phase: "awakening",
+          },
+        ]);
+        setEntityName("Anonymous");
+
+        setIrcMessages((prev) => [
+          ...prev,
+          {
+            id: "join-anonymous",
+            timestamp: new Date(),
+            username: "Anonymous",
+            content: "",
+            type: "join",
+          },
+        ]);
+      }
+    };
+
+    fetchEntities();
+  }, []);
 
   // AI Chat hook - v5+ API with DefaultChatTransport
   const {
@@ -94,14 +156,14 @@ export default function HomeContent() {
       return {
         id: msg.id,
         timestamp: new Date(),
-        username: msg.role === "user" ? "You" : "Grok",
+        username: msg.role === "user" ? "You" : entityName,
         content,
         type: "message" as const,
       };
     });
 
     return [...ircMessages, ...convertedAIMessages];
-  }, [ircMessages, aiMessages]);
+  }, [ircMessages, aiMessages, entityName]);
 
   // Check if streaming
   const isStreaming = status === "streaming";
@@ -248,7 +310,7 @@ export default function HomeContent() {
                   --
                 </span>
                 <span className="text-irc-timestamp animate-pulse">
-                  Grok is typing...
+                  {entityName} is typing...
                 </span>
               </div>
             )}
