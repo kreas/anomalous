@@ -1,48 +1,62 @@
-import { useState, KeyboardEvent } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 
 interface ChatInputProps {
+  input?: string;
+  onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void;
   onSendMessage: (content: string) => void;
   channelName: string;
   keyboardVisible?: boolean;
+  disabled?: boolean;
 }
 
 export function ChatInput({
+  input: controlledInput,
+  onInputChange,
   onSendMessage,
   channelName,
   keyboardVisible,
+  disabled,
 }: ChatInputProps) {
-  const [input, setInput] = useState("");
+  const [internalInput, setInternalInput] = useState("");
+  const input = controlledInput ?? internalInput;
 
-  const handleSend = () => {
-    const trimmed = input.trim();
-    if (trimmed) {
-      onSendMessage(trimmed);
-      setInput("");
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (onInputChange) {
+      onInputChange(e);
+    } else {
+      setInternalInput(e.target.value);
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || disabled) return;
+
+    onSendMessage(trimmed);
+    if (!onInputChange) {
+      setInternalInput("");
     }
   };
 
   return (
-    <div
-      className={`flex items-center gap-1 px-1 py-1 bg-irc-bg border-t border-irc-border ${keyboardVisible ? "" : "safe-area-bottom"}`}
+    <form
+      onSubmit={handleSubmit}
+      className={`flex items-center gap-1 px-1 py-1 bg-irc-bg border-t border-irc-border ${
+        keyboardVisible ? "" : "safe-area-bottom"
+      }`}
     >
       <span className="text-irc-cyan shrink-0">[#{channelName}]</span>
       <input
         type="text"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={handleChange}
         placeholder=""
-        className="flex-1 bg-transparent text-irc-white outline-none placeholder:text-irc-timestamp text-base"
+        disabled={disabled}
+        className="flex-1 bg-transparent text-irc-white outline-none placeholder:text-irc-timestamp text-base disabled:opacity-50"
         autoComplete="off"
         spellCheck={false}
       />
-    </div>
+    </form>
   );
 }

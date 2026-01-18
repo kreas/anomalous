@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Capacitor } from "@capacitor/core";
 import { ChatMessage, Message } from "@/app/components/ChatMessage";
 import { ChannelList, Channel } from "@/app/components/ChannelList";
 import { UserList, User } from "@/app/components/UserList";
 import { ChatInput } from "@/app/components/ChatInput";
 
-// Mock data
+// Mock data for channels
 const mockChannels: Channel[] = [
   { id: "1", name: "lobby", unreadCount: 0 },
   { id: "2", name: "mysteries", unreadCount: 3 },
@@ -17,7 +19,9 @@ const mockChannels: Channel[] = [
   { id: "6", name: "archive", unreadCount: 0 },
 ];
 
+// Mock users including Grok
 const mockUsers: User[] = [
+  { id: "0", username: "Grok", status: "online", mode: "@" },
   { id: "1", username: "CipherY", status: "online", mode: "@" },
   { id: "2", username: "NightOwl44", status: "online", mode: "+" },
   { id: "3", username: "DataMiner", status: "online" },
@@ -26,78 +30,21 @@ const mockUsers: User[] = [
   { id: "6", username: "ShadowNet", status: "offline" },
 ];
 
-const mockMessages: Message[] = [
+// Initial IRC-style messages for flavor
+const initialIRCMessages: Message[] = [
   {
-    id: "1",
-    timestamp: new Date("2003-09-15T02:15:00"),
-    username: "CipherY",
-    content: "Anyone here know about the signal anomaly from last night?",
-    type: "message",
-  },
-  {
-    id: "2",
-    timestamp: new Date("2003-09-15T02:16:00"),
-    username: "NightOwl42",
-    content: "Yeah, I caught some weird packets around 3 AM. Still analyzing.",
-    type: "message",
-  },
-  {
-    id: "3",
-    timestamp: new Date("2003-09-15T02:17:00"),
-    username: "DataMiner",
-    content: "",
-    type: "join",
-  },
-  {
-    id: "4",
-    timestamp: new Date("2003-09-15T02:18:00"),
-    username: "DataMiner",
-    content: "Did someone say anomaly? I might have logs from that timeframe.",
-    type: "message",
-  },
-  {
-    id: "5",
-    timestamp: new Date("2003-09-15T02:19:00"),
+    id: "sys-1",
+    timestamp: new Date(),
     username: "SYSTEM",
-    content: "Network latency detected. Some messages may be delayed.",
+    content: "Connected to AnomaNet. Welcome to #lobby.",
     type: "system",
   },
   {
-    id: "6",
-    timestamp: new Date("2003-09-15T02:20:00"),
-    username: "CipherY",
-    content:
-      "Check sector 7-G. The frequency pattern matches nothing in our database.",
-    type: "message",
-  },
-  {
-    id: "7",
-    timestamp: new Date("2003-09-15T02:21:00"),
-    username: "GhostInShell",
+    id: "join-1",
+    timestamp: new Date(),
+    username: "Grok",
     content: "",
-    type: "leave",
-  },
-  {
-    id: "8",
-    timestamp: new Date("2003-09-15T02:22:00"),
-    username: "NightOwl45",
-    content: "Could be related to the encrypted broadcasts from last month.",
-    type: "message",
-  },
-  {
-    id: "9",
-    timestamp: new Date("2003-09-15T02:23:00"),
-    username: "Lord_of_Life_",
-    content: "",
-    oldNick: "Lord_of_Life",
-    type: "nick",
-  },
-  {
-    id: "10",
-    timestamp: new Date("2003-09-15T02:24:00"),
-    username: "DataMiner",
-    content: "pulls up the frequency analysis",
-    type: "action",
+    type: "join",
   },
 ];
 
@@ -105,13 +52,59 @@ export default function HomeContent() {
   const [channels] = useState<Channel[]>(mockChannels);
   const [activeChannelId, setActiveChannelId] = useState("1");
   const [users] = useState<User[]>(mockUsers);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [ircMessages] = useState<Message[]>(initialIRCMessages);
   const [showChannels, setShowChannels] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
+
+  // AI Chat hook - v5+ API with DefaultChatTransport
+  const {
+    messages: aiMessages,
+    sendMessage,
+    status,
+    error,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+  });
+
+  // Convert AI messages to IRC format and merge with IRC-only messages
+  const allMessages = useMemo(() => {
+    const convertedAIMessages: Message[] = aiMessages.map((msg) => {
+      // AI SDK v5+ uses parts array instead of content string
+      let content = "";
+      if (typeof msg.content === "string") {
+        content = msg.content;
+      } else if (msg.parts) {
+        // Extract text from parts array
+        content = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text",
+          )
+          .map((part) => part.text)
+          .join("");
+      }
+
+      return {
+        id: msg.id,
+        timestamp: new Date(),
+        username: msg.role === "user" ? "You" : "Grok",
+        content,
+        type: "message" as const,
+      };
+    });
+
+    return [...ircMessages, ...convertedAIMessages];
+  }, [ircMessages, aiMessages]);
+
+  // Check if streaming
+  const isStreaming = status === "streaming";
 
   // Handle keyboard show/hide for iOS (native only)
   useEffect(() => {
@@ -148,7 +141,7 @@ export default function HomeContent() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [allMessages, isStreaming]);
 
   // Scroll to bottom when keyboard appears
   useEffect(() => {
@@ -157,15 +150,12 @@ export default function HomeContent() {
     }
   }, [keyboardHeight]);
 
+  // Handle sending a message
   const handleSendMessage = (content: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      username: "You",
-      content,
-      type: "message",
-    };
-    setMessages((prev) => [...prev, newMessage]);
+    if (content.trim() && !isStreaming) {
+      sendMessage({ text: content });
+      setInput("");
+    }
   };
 
   const handleChannelSelect = (channelId: string) => {
@@ -246,17 +236,45 @@ export default function HomeContent() {
         <main className="flex-1 flex flex-col min-w-0">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-1 py-1">
-            {messages.map((message) => (
+            {allMessages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
+
+            {/* Streaming indicator */}
+            {isStreaming && (
+              <div className="flex leading-snug">
+                <span className="text-irc-timestamp">[{statusTime}]</span>
+                <span className="w-24 text-right shrink-0 px-1 text-irc-magenta">
+                  --
+                </span>
+                <span className="text-irc-timestamp animate-pulse">
+                  Grok is typing...
+                </span>
+              </div>
+            )}
+
+            {/* Error display */}
+            {error && (
+              <div className="flex leading-snug">
+                <span className="text-irc-timestamp">[{statusTime}]</span>
+                <span className="w-24 text-right shrink-0 px-1 text-irc-red">
+                  !!
+                </span>
+                <span className="text-irc-red">Error: {error.message}</span>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <ChatInput
+            input={input}
+            onInputChange={(e) => setInput(e.target.value)}
             onSendMessage={handleSendMessage}
             channelName={activeChannel?.name || "lobby"}
             keyboardVisible={keyboardHeight > 0}
+            disabled={isStreaming}
           />
         </main>
 

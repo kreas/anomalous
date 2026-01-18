@@ -14,6 +14,8 @@
     "cap:sync": "npx cap sync"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.13",
+    "@ai-sdk/react": "^3.0.41",
     "@capacitor/android": "^6.2.1",
     "@capacitor/cli": "^6.2.1",
     "@capacitor/core": "^6.2.1",
@@ -21,6 +23,7 @@
     "@capacitor/keyboard": "^6.0.4",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.4",
+    "ai": "^6.0.39",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
