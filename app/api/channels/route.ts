@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { DEV_USER_ID } from "@/lib/constants";
+import { getUserId } from "@/lib/auth-helpers";
 import {
   getOrCreateChannelState,
   markChannelRead,
@@ -46,7 +46,7 @@ export interface ChannelUpdateResponse {
  */
 export async function GET(): Promise<NextResponse<ChannelStateResponse>> {
   try {
-    const userId = DEV_USER_ID;
+    const userId = await getUserId();
     const state = await getOrCreateChannelState(userId);
 
     return NextResponse.json({
@@ -73,7 +73,7 @@ export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<ChannelUpdateResponse>> {
   try {
-    const userId = DEV_USER_ID;
+    const userId = await getUserId();
     const body = (await request.json()) as ChannelUpdateRequest;
     const { action, channelId, targetUserId, targetUsername } = body;
 

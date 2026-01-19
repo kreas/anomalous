@@ -693,6 +693,27 @@ export default function HomeContent() {
           break;
         }
 
+        case "auth_signout": {
+          // Sign out - redirect to sign-in page
+          window.location.href = "/api/auth/signout";
+          break;
+        }
+
+        case "auth_whoami": {
+          // GET /api/profile response
+          const profile = data.profile;
+          if (!profile) {
+            addSystemMessage(
+              "Profile not found. You may need to complete onboarding.",
+            );
+            return;
+          }
+          addSystemMessage(
+            `=== YOUR PROFILE ===\nNickname: ${profile.nickname}\nDiscord: ${profile.discordUsername}\nJoined: ${new Date(profile.createdAt).toLocaleDateString()}`,
+          );
+          break;
+        }
+
         default:
           addSystemMessage(`Unknown API response handler: ${handler}`);
       }

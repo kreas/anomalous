@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { streamText, convertToModelMessages, UIMessage } from "ai";
-import { DEV_USER_ID, ANONYMOUS_ENTITY_ID } from "@/lib/constants";
+import { ANONYMOUS_ENTITY_ID } from "@/lib/constants";
+import { getUserId } from "@/lib/auth-helpers";
 import { getOrCreateAnonymousCard } from "@/lib/entities";
 import {
   getOrCreateRelationshipState,
@@ -29,7 +30,7 @@ interface ChatRequest {
 export async function POST(req: Request) {
   const { messages, channelId, isPrivate }: ChatRequest = await req.json();
   const model = process.env.CHAT_MODEL || "x-ai/grok-4-fast";
-  const userId = DEV_USER_ID;
+  const userId = await getUserId();
 
   let systemPrompt = FALLBACK_PROMPT;
 

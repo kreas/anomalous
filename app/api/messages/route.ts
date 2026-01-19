@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { DEV_USER_ID } from "@/lib/constants";
+import { getUserId } from "@/lib/auth-helpers";
 import type { ChannelMessage, GetMessagesOptions } from "@/types";
 import {
   getLatestMessages,
@@ -48,17 +48,17 @@ export interface SaveMessageResponse {
  * - after: ISO timestamp for pagination
  */
 export async function GET(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<NextResponse<MessagesResponse>> {
   try {
-    const userId = DEV_USER_ID;
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
 
     const channelId = searchParams.get("channelId");
     if (!channelId) {
       return NextResponse.json(
         { success: false, error: "channelId required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -89,7 +89,7 @@ export async function GET(
         success: false,
         error: "Failed to fetch messages",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -99,17 +99,17 @@ export async function GET(
  * Save a new message to channel history
  */
 export async function POST(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<NextResponse<SaveMessageResponse>> {
   try {
-    const userId = DEV_USER_ID;
+    const userId = await getUserId();
     const body = (await request.json()) as SaveMessageRequest;
     const { channelId, content, username, type = "message" } = body;
 
     if (!channelId || !content) {
       return NextResponse.json(
         { success: false, error: "channelId and content required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,7 +124,7 @@ export async function POST(
         body.userId || userId,
         username || "Anonymous",
         content,
-        type
+        type,
       );
     }
 
@@ -150,7 +150,7 @@ export async function POST(
         success: false,
         error: "Failed to save message",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

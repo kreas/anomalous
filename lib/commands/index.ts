@@ -30,3 +30,4 @@ export {
 import "./irc";
 import "./cases";
 import "./evidence";
+import "./auth";
