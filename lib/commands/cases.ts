@@ -96,17 +96,26 @@ registerCommand({
   name: "abandon",
   aliases: ["drop", "giveup"],
   description: "Abandon an active case",
-  usage: "/abandon <case_id>",
+  usage: "/abandon <case_id> [--confirm]",
   handler: (args) => {
     if (args.length === 0) {
       return {
         success: false,
-        message: "Usage: /abandon <case_id>",
+        message: "Usage: /abandon <case_id> --confirm",
         action: "system_message",
       };
     }
 
     const caseId = args[0];
+    const hasConfirm = args.includes("--confirm") || args.includes("-y");
+
+    if (!hasConfirm) {
+      return {
+        success: true,
+        message: `Are you sure you want to abandon case "${caseId}"?\nThis will move the case to your history and you'll lose any progress.\n\nTo confirm, run: /abandon ${caseId} --confirm`,
+        action: "system_message",
+      };
+    }
 
     return {
       success: true,

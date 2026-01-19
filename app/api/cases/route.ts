@@ -25,7 +25,11 @@ import {
   getMissingEvidenceHints,
   calculateEvidenceCompleteness,
 } from "@/lib/case-resolution";
-import { seedAvailableCases, getStarterContent } from "@/lib/case-generator";
+import {
+  seedAvailableCases,
+  getStarterContent,
+  createStarterEvidence,
+} from "@/lib/case-generator";
 import { addMultipleEvidence } from "@/lib/evidence";
 
 /**
@@ -33,10 +37,29 @@ import { addMultipleEvidence } from "@/lib/evidence";
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type") || "available";
+  const type = searchParams.get("type");
+  const caseId = searchParams.get("id");
 
   try {
-    if (type === "available") {
+    // Get a single case by ID (checks both active and available)
+    // Check this FIRST before type-based queries
+    if (caseId) {
+      // First check active cases
+      let caseData = await getActiveCase(DEV_USER_ID, caseId);
+
+      // If not active, check available cases
+      if (!caseData) {
+        caseData = await getAvailableCase(caseId);
+      }
+
+      if (!caseData) {
+        return NextResponse.json({ error: "Case not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ case: caseData });
+    }
+
+    if (type === "available" || !type) {
       let cases = await getAvailableCases();
 
       // If no cases available, seed the pool
@@ -55,24 +78,6 @@ export async function GET(request: Request) {
         history,
         maxActive: MAX_ACTIVE_CASES,
       });
-    }
-
-    // Get a single case by ID (checks both active and available)
-    const caseId = searchParams.get("id");
-    if (caseId) {
-      // First check active cases
-      let caseData = await getActiveCase(DEV_USER_ID, caseId);
-
-      // If not active, check available cases
-      if (!caseData) {
-        caseData = await getAvailableCase(caseId);
-      }
-
-      if (!caseData) {
-        return NextResponse.json({ error: "Case not found" }, { status: 404 });
-      }
-
-      return NextResponse.json({ case: caseData });
     }
 
     return NextResponse.json(
@@ -102,7 +107,27 @@ export async function POST(request: Request) {
       }
 
       const acceptedCase = await acceptCase(DEV_USER_ID, caseId);
-      return NextResponse.json({ case: acceptedCase });
+
+      // Grant case-relevant evidence from the starter pool
+      const allStarterEvidence = createStarterEvidence();
+      const caseEvidence = allStarterEvidence.filter(
+        (e) => e.caseRelevance && e.caseRelevance.includes(caseId),
+      );
+
+      if (caseEvidence.length > 0) {
+        // Update acquiredAt to now for freshness
+        const evidenceToGrant = caseEvidence.map((e) => ({
+          ...e,
+          acquiredAt: new Date().toISOString(),
+          acquiredFrom: "case_accept" as const,
+        }));
+        await addMultipleEvidence(DEV_USER_ID, evidenceToGrant);
+      }
+
+      return NextResponse.json({
+        case: acceptedCase,
+        evidenceGranted: caseEvidence.length,
+      });
     }
 
     if (action === "abandon") {

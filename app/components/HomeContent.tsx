@@ -520,9 +520,12 @@ export default function HomeContent() {
             addSystemMessage(data.error || "Failed to accept case.");
             return;
           }
-          addSystemMessage(
-            `Case accepted: ${acceptedCase.title}\n\n${acceptedCase.briefing}`,
-          );
+          const evidenceGranted = data.evidenceGranted as number | undefined;
+          let message = `Case accepted: ${acceptedCase.title}\n\n${acceptedCase.briefing}`;
+          if (evidenceGranted && evidenceGranted > 0) {
+            message += `\n\n--- EVIDENCE ACQUIRED ---\n${evidenceGranted} evidence item${evidenceGranted > 1 ? "s" : ""} added to your inventory.\nUse /evidence to view your inventory.`;
+          }
+          addSystemMessage(message);
           break;
         }
 
@@ -589,7 +592,7 @@ export default function HomeContent() {
           const { items, byType, unexaminedCount, total } = data;
           if (!items || items.length === 0) {
             addSystemMessage(
-              "Your evidence inventory is empty.\nComplete cases or use /signal to acquire evidence.",
+              "Your evidence inventory is empty.\nAccept cases with /accept to acquire evidence.",
             );
             return;
           }
