@@ -565,6 +565,24 @@ export default function HomeContent() {
             }
           }
           break;
+
+        // Phase 3: Case & Evidence Actions
+        case "case_accepted":
+        case "case_list":
+        case "case_detail":
+        case "case_abandoned":
+        case "evidence_list":
+        case "evidence_detail":
+        case "evidence_examined":
+        case "connection_found":
+        case "connection_failed":
+        case "solve_prompt":
+        case "case_resolved":
+          // All Phase 3 actions include their output in result.message
+          if (result.message) {
+            addSystemMessage(result.message);
+          }
+          break;
       }
     },
     [
@@ -600,7 +618,7 @@ export default function HomeContent() {
           })),
         };
 
-        const result = executeCommand(content, context);
+        const result = await executeCommand(content, context);
         await handleCommandResult(result);
       } else {
         // Regular message
