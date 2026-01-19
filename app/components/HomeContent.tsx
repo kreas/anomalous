@@ -1242,7 +1242,7 @@ export default function HomeContent() {
         <div className="flex items-center gap-2">
           <span className="text-irc-timestamp">[{statusTime}]</span>
           <span className="text-irc-timestamp">[</span>
-          <span className="text-irc-green">AnomaNet</span>
+          <span className="text-irc-green">sh.ghost.gs</span>
           <span className="text-irc-timestamp">]</span>
           <span
             className={
