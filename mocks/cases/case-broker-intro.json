@@ -1,0 +1,21 @@
+{
+  "id": "case-broker-intro",
+  "title": "The Broker's First Sale",
+  "description": "Someone called DataMiner is selling information. Investigate their operation.",
+  "briefing": "A user named \"DataMiner\" has been advertising information for sale in various channels. They claim to have access to private data, old logs, and even user credentials.\n\nThis could be a serious security breach. Investigate DataMiner's operation:\n- What are they selling?\n- How are they getting this information?\n- Who are they selling to?\n\nThis case may lead to deeper investigations...\n\nRequired evidence:\n- Chat logs showing DataMiner's activities\n- A data fragment of what they're selling\n- Testimony from someone who's dealt with them",
+  "type": "information_brokering",
+  "rarity": "uncommon",
+  "status": "available",
+  "requiredEvidence": [
+    { "type": "chat_log", "count": 1, "hint": "DataMiner's sales pitch" },
+    { "type": "data_fragment", "count": 1, "hint": "sample of their merchandise" },
+    { "type": "testimony", "count": 1, "hint": "a buyer or seller" }
+  ],
+  "rewards": {
+    "xp": 100,
+    "fragments": 50,
+    "entityXp": 30,
+    "unlocks": ["#signals"]
+  },
+  "source": "anonymous_tip"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "case-silent-user",
+  "title": "Silent User",
+  "description": "A regular user hasn't logged in for days. Their last message was cryptic.",
+  "briefing": "User \"NightOwl\" was active daily for months, then suddenly went silent 5 days ago. Their last message in #off-topic was: \"They're watching. I have to go dark.\"\n\nInvestigate what happened to NightOwl. Was it paranoia, or did they discover something they shouldn't have?\n\nRequired evidence:\n- Chat logs from NightOwl's last conversations\n- Testimony from users who knew them",
+  "type": "missing_person",
+  "rarity": "common",
+  "status": "available",
+  "requiredEvidence": [
+    { "type": "chat_log", "count": 1, "hint": "NightOwl's conversations" },
+    { "type": "testimony", "count": 1, "hint": "someone who knew them" }
+  ],
+  "rewards": {
+    "xp": 50,
+    "fragments": 25,
+    "entityXp": 15
+  },
+  "source": "anonymous_tip"
+}

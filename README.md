@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Anomalous
+
+An IRC-style mystery investigation game built with Next.js 16 and React 19.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Run development server
 pnpm dev
-# or
-bun dev
+
+# Run tests
+pnpm test
+
+# Build for production
+pnpm build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Mock Data & Seeding
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The `mocks/` folder contains case and evidence data for development:
 
-## Learn More
+```bash
+# Preview what would be uploaded
+pnpm seed:dry-run
 
-To learn more about Next.js, take a look at the following resources:
+# Seed cases to R2
+pnpm seed
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Seed cases and evidence to a specific user
+pnpm seed -- --user=<userId>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `mocks/README.md` for data formats and structure.
 
-## Deploy on Vercel
+## System Message Color Formatting
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+System messages in the chat use IRC-style color coding for readability:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Element | Color |
+|---------|-------|
+| Headers (`=== Title ===`) | Cyan, bold |
+| Section labels (`Evidence Required:`, `Rewards:`, etc.) | Yellow label, white content |
+| `[COMMON]` rarity | White, bold |
+| `[UNCOMMON]` rarity | Green, bold |
+| `[RARE]` rarity | Cyan, bold |
+| `[LEGENDARY]` rarity | Yellow, bold |
+| `[IN_PROGRESS]` status | Yellow |
+| `[ACCEPTED]` status | Green |
+| `[SOLVED]` status | Cyan |
+| `[COLD]` status | Red |
+| Reward lines (XP, Fragments) | Green |
+| Commands (`/accept`, `/solve`, etc.) | Cyan |
+| Numbered list items (`1.`, `2.`) | Yellow number, white text |
+| Evidence/case IDs (`case-xxx`, `chat-xxx`) | Magenta |
+
+## Project Structure
+
+```
+app/                  # Next.js App Router pages and components
+lib/                  # Core libraries and utilities
+  commands/           # Command registry and handlers
+  cases.ts            # Case management
+  evidence.ts         # Evidence system
+  r2.ts               # R2 storage client
+mocks/                # Mock data for development
+  cases/              # Case JSON files
+  evidence/           # Evidence JSON files
+scripts/              # Utility scripts
+  seed-r2.ts          # R2 seeding script
+docs/                 # Documentation and design docs
+types/                # TypeScript type definitions
+```
+
+## Environment Variables
+
+Required for R2 storage:
+
+- `R2_ENDPOINT` - Cloudflare R2 endpoint URL
+- `R2_ACCESS_KEY_ID` - R2 access key
+- `R2_SECRET_ACCESS_KEY` - R2 secret key
+- `R2_BUCKET` - Bucket name (defaults to "mythic-os")

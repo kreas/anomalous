@@ -1,0 +1,20 @@
+{
+  "id": "case-data-leak",
+  "title": "The Leak",
+  "description": "Private conversation logs are appearing in public channels. Find the source.",
+  "briefing": "Someone is leaking private conversations to #off-topic. The leaked logs contain sensitive information - user disputes, private confessions, personal data.\n\nThe leaker seems to have access to private message logs. Find out who they are and how they're getting this access.\n\nRequired evidence:\n- The leaked chat logs themselves\n- An access key or method they're using",
+  "type": "exposure",
+  "rarity": "common",
+  "status": "available",
+  "requiredEvidence": [
+    { "type": "chat_log", "count": 1, "hint": "leaked private conversations" },
+    { "type": "access_key", "count": 1, "hint": "how they accessed the logs" }
+  ],
+  "rewards": {
+    "xp": 50,
+    "fragments": 25,
+    "entityXp": 15
+  },
+  "source": "npc_request",
+  "clientId": "SysAdmin"
+}

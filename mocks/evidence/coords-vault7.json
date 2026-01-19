@@ -1,0 +1,15 @@
+{
+  "id": "coords-vault7",
+  "name": "Vault-7 Entry Point",
+  "description": "Coordinates to the hidden entry point for #vault-7.",
+  "type": "coordinates",
+  "rarity": "uncommon",
+  "content": "/join #vault-7-antechamber\nThen use the access key at the prompt.\nThe original operators left this backdoor in case of emergency.",
+  "caseRelevance": ["case-locked-out"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["key-vault7"],
+  "metadata": {
+    "target": "#vault-7-antechamber"
+  }
+}

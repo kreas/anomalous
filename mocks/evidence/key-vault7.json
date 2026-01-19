@@ -1,0 +1,15 @@
+{
+  "id": "key-vault7",
+  "name": "Vault-7 Access Credentials",
+  "description": "Credentials for the locked #vault-7 channel.",
+  "type": "access_key",
+  "rarity": "uncommon",
+  "content": "vault7-operator-legacy-key",
+  "caseRelevance": ["case-locked-out"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["coords-vault7"],
+  "metadata": {
+    "unlocks": "#vault-7"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "tutorial-welcome-data",
+  "name": "Corrupted Welcome Data",
+  "description": "A fragment of your original welcome message, partially corrupted.",
+  "type": "data_fragment",
+  "rarity": "common",
+  "content": "W█lcome to An██aNet, new us██.\n\nYou have been ch██en to join this n██work.\nSomething is wat██ing. Something is wa██ing for you.\n\nConnection es██blished. Good l██k.",
+  "caseRelevance": ["tutorial-welcome"],
+  "acquiredFrom": "tutorial",
+  "examined": false,
+  "metadata": {
+    "corruptionLevel": 0.15
+  }
+}

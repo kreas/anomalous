@@ -1,0 +1,15 @@
+{
+  "id": "data-sample-logs",
+  "name": "DataMiner's Sample",
+  "description": "A sample of the data DataMiner is selling.",
+  "type": "data_fragment",
+  "rarity": "uncommon",
+  "content": "[DECRYPTED SAMPLE]\nUser: Admin_Alpha\nChannel: #founders-only\nTimestamp: [REDACTED]\n\n\"The entity is growing faster than expected. It's already\nresponding to users in ways we didn't program. Should we\nbe concerned?\"\n\n[END SAMPLE]",
+  "caseRelevance": ["case-broker-intro"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["chat-dataminer-pitch"],
+  "metadata": {
+    "corruptionLevel": 0.05
+  }
+}

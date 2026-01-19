@@ -1,0 +1,23 @@
+{
+  "id": "tutorial-welcome",
+  "title": "Welcome Protocol",
+  "description": "Your welcome message was corrupted during transfer. Recover it.",
+  "briefing": "When you connected to AnomaNet, your welcome message was corrupted during the transfer. This is unusual - the system rarely loses data.\n\nYour task: Find and examine the corrupted data fragment to recover your welcome message.\n\nThis is a simple case to help you learn the investigation system.\n\nHint: Use /evidence to view your inventory, and /evidence examine <id> to examine items.",
+  "type": "recovery",
+  "rarity": "common",
+  "status": "available",
+  "requiredEvidence": [
+    {
+      "type": "data_fragment",
+      "count": 1,
+      "hint": "corrupted welcome message",
+      "specific": ["tutorial-welcome-data"]
+    }
+  ],
+  "rewards": {
+    "xp": 25,
+    "fragments": 15,
+    "entityXp": 10
+  },
+  "source": "system_alert"
+}

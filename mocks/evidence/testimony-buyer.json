@@ -1,0 +1,14 @@
+{
+  "id": "testimony-buyer",
+  "name": "Anonymous Buyer's Statement",
+  "description": "Testimony from someone who bought from DataMiner.",
+  "type": "testimony",
+  "rarity": "uncommon",
+  "content": "Yeah, I bought from DataMiner. Don't judge me - I needed access to an old channel where I'd stored important data before I lost my credentials.\n\nThe transaction was smooth. I paid the fragments, they delivered the access key within minutes. Professional, almost.\n\nHow do they get this stuff? No idea. But they have access to things they shouldn't. Old logs, credentials, private messages. It's like they have a backdoor into the entire server.\n\nOne thing though - they mentioned something about \"the source\" once. Said they weren't the one finding the data, just selling it. There's someone else involved.",
+  "caseRelevance": ["case-broker-intro"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "metadata": {
+    "witness": "Anonymous"
+  }
+}

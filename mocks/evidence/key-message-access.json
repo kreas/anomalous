@@ -1,0 +1,15 @@
+{
+  "id": "key-message-access",
+  "name": "Message System Access Key",
+  "description": "A key that grants access to the private message system.",
+  "type": "access_key",
+  "rarity": "common",
+  "content": "pm-access-7a3f9b2e",
+  "caseRelevance": ["case-data-leak"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["chat-leaked-private"],
+  "metadata": {
+    "unlocks": "Private Message Archive"
+  }
+}

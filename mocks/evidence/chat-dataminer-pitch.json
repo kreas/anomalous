@@ -1,0 +1,15 @@
+{
+  "id": "chat-dataminer-pitch",
+  "name": "DataMiner's Sales Pitch",
+  "description": "A recorded conversation of DataMiner selling information.",
+  "type": "chat_log",
+  "rarity": "uncommon",
+  "content": "<DataMiner> I have what you need\n<unknown_buyer> how much?\n<DataMiner> 50 fragments for basic logs, 200 for credentials\n<unknown_buyer> credentials to what?\n<DataMiner> anything. private channels, user accounts, even mod access\n<unknown_buyer> how do I know this is legit?\n<DataMiner> I'll send you a sample. free of charge.\n<DataMiner> [file transfer: sample_logs.dat]\n<unknown_buyer> ...this is real. where did you get this?\n<DataMiner> I have my sources. do we have a deal?",
+  "caseRelevance": ["case-broker-intro"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["data-sample-logs"],
+  "metadata": {
+    "participants": ["DataMiner", "unknown_buyer"]
+  }
+}

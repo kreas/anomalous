@@ -1,0 +1,14 @@
+{
+  "id": "key-oldtimer-backup",
+  "name": "OldTimer's Backup Key",
+  "description": "A backup access key belonging to OldTimer.",
+  "type": "access_key",
+  "rarity": "common",
+  "content": "archive-backup-oldtimer-9x4k",
+  "caseRelevance": ["case-lost-creds"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "metadata": {
+    "unlocks": "#archives access for OldTimer"
+  }
+}

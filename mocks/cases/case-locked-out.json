@@ -1,0 +1,19 @@
+{
+  "id": "case-locked-out",
+  "title": "Locked Out",
+  "description": "Gain access to a locked private channel to retrieve important data.",
+  "briefing": "There's a private channel called #vault-7 that contains archived data from AnomaNet's early days. The channel has been locked for years, and the original operators are long gone.\n\nSomeone needs that data. Find a way in.\n\nYou'll need credentials or coordinates to access the channel.\n\nRequired evidence:\n- Access key for #vault-7\n- Coordinates or instructions for entry",
+  "type": "infiltration",
+  "rarity": "uncommon",
+  "status": "available",
+  "requiredEvidence": [
+    { "type": "access_key", "count": 1, "hint": "channel credentials" },
+    { "type": "coordinates", "count": 1, "hint": "entry point" }
+  ],
+  "rewards": {
+    "xp": 100,
+    "fragments": 50,
+    "entityXp": 30
+  },
+  "source": "system_alert"
+}

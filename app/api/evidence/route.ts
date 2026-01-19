@@ -10,10 +10,13 @@ import {
   getEvidenceById,
   examineEvidence,
   connectEvidence,
+  checkConnection,
   getUnexaminedCount,
   getEvidenceByType,
   addEvidence,
+  getConnections,
 } from "@/lib/evidence";
+import { formatEvidenceContent } from "@/lib/evidence-formatters";
 
 /**
  * GET /api/evidence - Get user's evidence inventory
@@ -29,7 +32,7 @@ export async function GET(request: Request) {
       if (!evidence) {
         return NextResponse.json(
           { error: "Evidence not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       return NextResponse.json({ evidence });
@@ -50,7 +53,7 @@ export async function GET(request: Request) {
     console.error("[API] Evidence GET error:", error);
     return NextResponse.json(
       { error: "Failed to fetch evidence" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -67,35 +70,51 @@ export async function POST(request: Request) {
       if (!evidenceId) {
         return NextResponse.json(
           { error: "evidenceId required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       const examined = await examineEvidence(DEV_USER_ID, evidenceId);
-      return NextResponse.json({ evidence: examined });
+      const formattedContent = formatEvidenceContent(examined);
+      return NextResponse.json({ evidence: examined, formattedContent });
     }
 
     if (action === "connect") {
       if (!evidenceId1 || !evidenceId2) {
         return NextResponse.json(
           { error: "evidenceId1 and evidenceId2 required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
+      // First check if connection is possible
+      const checkResult = await checkConnection(
+        DEV_USER_ID,
+        evidenceId1,
+        evidenceId2,
+      );
+
+      if (!checkResult.valid) {
+        return NextResponse.json({
+          connected: false,
+          insight: checkResult.insight || "No connection found.",
+        });
+      }
+
+      // Create the connection
       const connection = await connectEvidence(
         DEV_USER_ID,
         evidenceId1,
-        evidenceId2
+        evidenceId2,
       );
-      return NextResponse.json({ connection });
+      return NextResponse.json({ connected: true, connection });
     }
 
     if (action === "add") {
       if (!evidence) {
         return NextResponse.json(
           { error: "evidence object required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -103,16 +122,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json(
-      { error: "Invalid action" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
     console.error("[API] Evidence POST error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

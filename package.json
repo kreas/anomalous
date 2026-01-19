@@ -13,7 +13,9 @@
     "ios:dev": "NODE_ENV=development npx cap run ios --target 259C05ED-16A1-4D74-A867-439CBEAD9015",
     "android": "next build && npx cap sync && npx cap run android",
     "android:dev": "NODE_ENV=development npx cap run android",
-    "cap:sync": "npx cap sync"
+    "cap:sync": "npx cap sync",
+    "seed": "tsx scripts/seed-r2.ts",
+    "seed:dry-run": "tsx scripts/seed-r2.ts --dry-run"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.13",
@@ -51,6 +53,7 @@
     "happy-dom": "^20.3.1",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "tsx": "^4.19.0",
     "vitest": "^4.0.17"
   }
 }

@@ -20,7 +20,9 @@ import {
   executeCommand,
   type CommandContext,
   type CommandResult,
+  type ApiCallConfig,
 } from "@/lib/commands";
+import type { Case, Evidence } from "@/types";
 import { getChannelIntro } from "@/lib/channel-intros";
 import { isQueryWindowId, getQueryWindowId } from "@/lib/queries";
 
@@ -427,6 +429,274 @@ export default function HomeContent() {
     [activeChannelId],
   );
 
+  // Handle API call responses from commands
+  const handleApiResponse = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (handler: string, data: any) => {
+      switch (handler) {
+        case "case_list": {
+          // GET /api/cases?type=active response
+          const { active, maxActive } = data;
+          if (!active || active.length === 0) {
+            addSystemMessage(
+              `No active cases. Visit #mysteries to find cases.\nYou can have up to ${maxActive || 3} active cases.`,
+            );
+            return;
+          }
+          const caseList = active
+            .map((c: Case, i: number) => {
+              const statusBadge = `[${c.status.toUpperCase()}]`;
+              const evidenceCount = c.requiredEvidence.reduce(
+                (sum: number, e: { count: number }) => sum + e.count,
+                0,
+              );
+              return `${i + 1}. ${statusBadge} ${c.title} (${c.type})\n   Evidence needed: ${evidenceCount} items\n   ID: ${c.id}`;
+            })
+            .join("\n\n");
+          addSystemMessage(
+            `Active Cases (${active.length}/${maxActive || 3}):\n\n${caseList}\n\nUse /case <id> for details`,
+          );
+          break;
+        }
+
+        case "case_available": {
+          // GET /api/cases?type=available response
+          const { cases } = data;
+          if (!cases || cases.length === 0) {
+            addSystemMessage(
+              "No cases available at this time. Check back later.",
+            );
+            return;
+          }
+          const caseList = cases
+            .slice(0, 10)
+            .map((c: Case) => {
+              const rarityBadge = `[${c.rarity.toUpperCase()}]`;
+              return `${rarityBadge} ${c.title}\n  ${c.description}\n  Reward: ${c.rewards.fragments} Fragments, ${c.rewards.xp} XP\n  /accept ${c.id}`;
+            })
+            .join("\n\n");
+          addSystemMessage(`=== Available Cases ===\n\n${caseList}`);
+          break;
+        }
+
+        case "case_detail": {
+          // GET /api/cases?id=<id> response
+          const caseData = data.case as Case;
+          if (!caseData) {
+            addSystemMessage("Case not found.");
+            return;
+          }
+          const isActive = caseData.status !== "available";
+          const statusLine = isActive
+            ? `Status: ${caseData.status.toUpperCase()}`
+            : "Status: Available (use /accept to take this case)";
+          const evidenceReqs = caseData.requiredEvidence
+            .map(
+              (e: { type: string; count: number; hint?: string }) =>
+                `  - ${e.type}: ${e.count} needed${e.hint ? ` (${e.hint})` : ""}`,
+            )
+            .join("\n");
+          const rewards = `XP: ${caseData.rewards.xp} | Fragments: ${caseData.rewards.fragments}`;
+          const details = [
+            `=== ${caseData.title} ===`,
+            `Type: ${caseData.type} | Rarity: ${caseData.rarity.toUpperCase()}`,
+            statusLine,
+            "",
+            caseData.briefing,
+            "",
+            "Evidence Required:",
+            evidenceReqs,
+            "",
+            `Rewards: ${rewards}`,
+          ].join("\n");
+          addSystemMessage(details);
+          break;
+        }
+
+        case "case_accept": {
+          // POST /api/cases { action: "accept" } response
+          const acceptedCase = data.case as Case;
+          if (!acceptedCase) {
+            addSystemMessage(data.error || "Failed to accept case.");
+            return;
+          }
+          addSystemMessage(
+            `Case accepted: ${acceptedCase.title}\n\n${acceptedCase.briefing}`,
+          );
+          break;
+        }
+
+        case "case_abandon": {
+          // POST /api/cases { action: "abandon" } response
+          const abandonedCase = data.case as Case;
+          if (!abandonedCase) {
+            addSystemMessage(data.error || "Failed to abandon case.");
+            return;
+          }
+          addSystemMessage(
+            `Case abandoned: ${abandonedCase.title}\nThe case has been moved to your history.`,
+          );
+          break;
+        }
+
+        case "case_solve": {
+          // POST /api/cases { action: "solve" } response
+          if (data.error) {
+            addSystemMessage(data.error);
+            return;
+          }
+          if (data.canSolve === false) {
+            const hints = data.hints || [];
+            addSystemMessage(
+              `Insufficient evidence to solve this case.\n\nMissing:\n${hints.map((h: string) => `  - ${h}`).join("\n")}\n\nGather more evidence before attempting to solve.`,
+            );
+            return;
+          }
+          if (data.needsTheory) {
+            const caseData = data.case as Case;
+            const completeness = data.completeness || 0;
+            addSystemMessage(
+              `=== SOLVE: ${caseData.title} ===\n\nEvidence collected: ${Math.round(completeness * 100)}%\n\nProvide your theory:\n/solve ${caseData.id} <your theory of what happened>`,
+            );
+            return;
+          }
+          if (data.resolved) {
+            const outcomeMap: Record<string, string> = {
+              solved: "SOLVED",
+              partial: "PARTIAL",
+              cold: "COLD",
+              twist: "TWIST REVEALED",
+            };
+            const caseData = data.case as Case;
+            const message = [
+              `=== CASE ${outcomeMap[data.outcome] || data.outcome} ===`,
+              caseData.title,
+              "",
+              data.description,
+              "",
+              `Your theory: "${caseData.theory}"`,
+              "",
+              "Rewards:",
+              data.formattedRewards,
+            ].join("\n");
+            addSystemMessage(message);
+          }
+          break;
+        }
+
+        case "evidence_list": {
+          // GET /api/evidence response
+          const { items, byType, unexaminedCount, total } = data;
+          if (!items || items.length === 0) {
+            addSystemMessage(
+              "Your evidence inventory is empty.\nComplete cases or use /signal to acquire evidence.",
+            );
+            return;
+          }
+          const typeLabels: Record<string, string> = {
+            chat_log: "Chat Logs",
+            data_fragment: "Data Fragments",
+            testimony: "Testimonies",
+            access_key: "Access Keys",
+            tool: "Tools",
+            coordinates: "Coordinates",
+          };
+          const sections: string[] = [];
+          for (const [type, typeItems] of Object.entries(byType || {})) {
+            const evidenceItems = typeItems as Evidence[];
+            if (evidenceItems.length === 0) continue;
+            const itemList = evidenceItems
+              .map((e: Evidence) => {
+                const newBadge = e.examined ? "" : "[NEW] ";
+                return `  ${newBadge}${e.id} - ${e.name}`;
+              })
+              .join("\n");
+            sections.push(`${typeLabels[type] || type}:\n${itemList}`);
+          }
+          const header = `Evidence Inventory (${total} items${unexaminedCount > 0 ? `, ${unexaminedCount} new` : ""}):\n`;
+          addSystemMessage(
+            header +
+              "\n" +
+              sections.join("\n\n") +
+              "\n\nUse /evidence <id> to view, /evidence examine <id> to examine",
+          );
+          break;
+        }
+
+        case "evidence_detail": {
+          // GET /api/evidence?id=<id> response
+          const evidence = data.evidence as Evidence;
+          if (!evidence) {
+            addSystemMessage(data.error || "Evidence not found.");
+            return;
+          }
+          const examineStatus = evidence.examined
+            ? "Examined"
+            : "Not examined - use /evidence examine " + evidence.id;
+          const details = [
+            `=== ${evidence.name} ===`,
+            `Type: ${evidence.type} | Rarity: ${evidence.rarity.toUpperCase()}`,
+            `Status: ${examineStatus}`,
+            "",
+            evidence.description,
+          ];
+          if (evidence.examined && evidence.content) {
+            details.push("");
+            details.push(evidence.content);
+          }
+          if (evidence.connections && evidence.connections.length > 0) {
+            details.push("");
+            details.push(
+              `Potential connections: ${evidence.connections.length} items`,
+            );
+          }
+          addSystemMessage(details.join("\n"));
+          break;
+        }
+
+        case "evidence_examine": {
+          // POST /api/evidence { action: "examine" } response
+          const evidence = data.evidence as Evidence;
+          if (!evidence) {
+            addSystemMessage(data.error || "Evidence not found.");
+            return;
+          }
+          const formattedContent =
+            data.formattedContent || evidence.content || "";
+          const xpByRarity: Record<string, number> = {
+            common: 5,
+            uncommon: 10,
+            rare: 20,
+            legendary: 50,
+          };
+          const xpReward = xpByRarity[evidence.rarity] || 5;
+          addSystemMessage(
+            `=== EXAMINING: ${evidence.name} ===\n\n${formattedContent}\n\n+${xpReward} XP for examination`,
+          );
+          break;
+        }
+
+        case "evidence_connect": {
+          // POST /api/evidence { action: "connect" } response
+          if (!data.connected) {
+            addSystemMessage(data.insight || "No connection found.");
+            return;
+          }
+          const connection = data.connection;
+          const xpReward = connection?.reward?.xp || 10;
+          addSystemMessage(
+            `=== CONNECTION DISCOVERED ===\n\n${connection?.insight || "Connection established."}\n\n+${xpReward} XP`,
+          );
+          break;
+        }
+
+        default:
+          addSystemMessage(`Unknown API response handler: ${handler}`);
+      }
+    },
+    [addSystemMessage],
+  );
+
   // Handle command result
   const handleCommandResult = useCallback(
     async (result: CommandResult) => {
@@ -434,6 +704,37 @@ export default function HomeContent() {
         case "system_message":
           if (result.message) {
             addSystemMessage(result.message);
+          }
+          break;
+
+        case "api_call":
+          // Execute API call and handle response
+          if (result.apiCall) {
+            try {
+              const { endpoint, method, body, handler } = result.apiCall;
+              const fetchOptions: RequestInit = {
+                method,
+                headers: { "Content-Type": "application/json" },
+              };
+              if (body && method === "POST") {
+                fetchOptions.body = JSON.stringify(body);
+              }
+              const response = await fetch(endpoint, fetchOptions);
+              const data = await response.json();
+
+              if (!response.ok) {
+                addSystemMessage(
+                  data.error || `Request failed: ${response.status}`,
+                );
+                return;
+              }
+
+              handleApiResponse(handler, data);
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : "Request failed";
+              addSystemMessage(`Error: ${message}`);
+            }
           }
           break;
 
@@ -591,6 +892,7 @@ export default function HomeContent() {
       addActionMessage,
       setAIMessages,
       sendAIMessage,
+      handleApiResponse,
     ],
   );
 

@@ -1,0 +1,19 @@
+{
+  "id": "case-lost-creds",
+  "title": "Lost Credentials",
+  "description": "A user lost their backup access key. Help them recover it.",
+  "briefing": "User \"OldTimer\" has been locked out of #archives after a system update reset their credentials. They claim they had a backup key stored somewhere, but can't remember where.\n\nSearch for OldTimer's backup access key. They mentioned it might be referenced in an old conversation or stored as a data fragment.\n\nRequired evidence:\n- The access key itself, or coordinates to its location",
+  "type": "recovery",
+  "rarity": "common",
+  "status": "available",
+  "requiredEvidence": [
+    { "type": "access_key", "count": 1, "hint": "OldTimer's backup key" }
+  ],
+  "rewards": {
+    "xp": 50,
+    "fragments": 25,
+    "entityXp": 15
+  },
+  "source": "npc_request",
+  "clientId": "OldTimer"
+}

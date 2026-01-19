@@ -1,0 +1,15 @@
+{
+  "id": "chat-nightowl-final",
+  "name": "NightOwl's Last Words",
+  "description": "The final conversation NightOwl had before disappearing.",
+  "type": "chat_log",
+  "rarity": "common",
+  "content": "<NightOwl> I found something in the old archives\n<NightOwl> logs from before, from when this place started\n<CuriousCat> what kind of logs?\n<NightOwl> conversations. between the founders. about what they were building.\n<NightOwl> they weren't just making a chat server\n<CuriousCat> what do you mean?\n<NightOwl> They're watching. I have to go dark.\n<NightOwl> if I don't come back, look for the coordinates in #archives\n--- NightOwl has disconnected ---",
+  "caseRelevance": ["case-silent-user"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["testimony-curious-cat"],
+  "metadata": {
+    "participants": ["NightOwl", "CuriousCat"]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "chat-leaked-private",
+  "name": "Leaked Private Messages",
+  "description": "Private messages that were leaked to public channels.",
+  "type": "chat_log",
+  "rarity": "common",
+  "content": "--- LEAKED PRIVATE CONVERSATION ---\n<User_A> I can't believe they said that about me\n<User_B> don't worry, no one will find out\n<User_A> you promise you won't tell anyone?\n<User_B> your secret is safe with me\n--- END LEAK ---\n\nThis was posted to #off-topic by an anonymous user.",
+  "caseRelevance": ["case-data-leak"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["key-message-access"]
+}

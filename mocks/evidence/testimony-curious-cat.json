@@ -1,0 +1,15 @@
+{
+  "id": "testimony-curious-cat",
+  "name": "CuriousCat's Statement",
+  "description": "Testimony from the last person to talk to NightOwl.",
+  "type": "testimony",
+  "rarity": "common",
+  "content": "NightOwl was always curious about the old days of AnomaNet. They spent hours in #archives searching through old logs.\n\nThat last conversation... they seemed excited at first, like they'd found something big. Then suddenly scared. They said \"they're watching\" but wouldn't say who.\n\nI tried to message them after they disconnected. Nothing. Their account still exists but they never came back online.\n\nI think they found something they weren't supposed to find.",
+  "caseRelevance": ["case-silent-user"],
+  "acquiredFrom": "exploration",
+  "examined": false,
+  "connections": ["chat-nightowl-final"],
+  "metadata": {
+    "witness": "CuriousCat"
+  }
+}
