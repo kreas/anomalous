@@ -1039,3 +1039,132 @@ function getExaminationXP(rarity: string): number {
   };
   return xpByRarity[rarity] || 5;
 }
+
+// =============================================================================
+// Solve Command (Phase 3)
+// =============================================================================
+
+import { completeCase } from "./cases";
+import { getEvidenceForCase, getConnections } from "./evidence";
+import {
+  resolveCase,
+  getMissingEvidenceHints,
+  calculateEvidenceCompleteness,
+} from "./case-resolution";
+
+/**
+ * /solve - Attempt to solve a case
+ */
+registerCommand({
+  name: "solve",
+  aliases: ["resolve", "close"],
+  description: "Attempt to solve an active case",
+  usage: "/solve <case_id> [theory]",
+  handler: async (args, context) => {
+    if (args.length === 0) {
+      return {
+        success: false,
+        message:
+          "Usage: /solve <case_id> [theory]\nProvide your theory of what happened.",
+        action: "system_message",
+      };
+    }
+
+    const caseId = args[0];
+    const theory = args.slice(1).join(" ");
+
+    try {
+      // Get the active case
+      const activeCase = await getActiveCase(context.userId, caseId);
+      if (!activeCase) {
+        return {
+          success: false,
+          message: `Case not found in your active cases: ${caseId}\nUse /cases to see your active cases.`,
+          action: "system_message",
+        };
+      }
+
+      // Get relevant evidence and connections
+      const evidence = await getEvidenceForCase(context.userId, caseId);
+      const allEvidence = await getAllEvidence(context.userId);
+      const connections = await getConnections(context.userId);
+
+      // Calculate completeness to determine if we need a theory prompt
+      const completeness = calculateEvidenceCompleteness(
+        activeCase,
+        allEvidence,
+      );
+
+      // If less than 50% evidence, don't allow solve attempt
+      if (completeness < 0.5) {
+        const hints = getMissingEvidenceHints(activeCase, allEvidence);
+        return {
+          success: false,
+          message: `Insufficient evidence to solve this case.\n\nMissing:\n${hints.map((h) => `  - ${h}`).join("\n")}\n\nGather more evidence before attempting to solve.`,
+          action: "system_message",
+        };
+      }
+
+      // If no theory provided, prompt for one
+      if (!theory) {
+        return {
+          success: true,
+          message: `=== SOLVE: ${activeCase.title} ===\n\nEvidence collected: ${Math.round(completeness * 100)}%\n\nProvide your theory:\n/solve ${caseId} <your theory of what happened>`,
+          action: "solve_prompt",
+          data: {
+            case: activeCase,
+            evidence: allEvidence,
+          },
+        };
+      }
+
+      // Resolve the case
+      const resolution = resolveCase(
+        activeCase,
+        allEvidence,
+        connections,
+        theory,
+      );
+
+      // Complete the case in storage
+      await completeCase(context.userId, caseId, resolution.outcome, theory);
+
+      // Build resolution message
+      const outcomeEmoji = {
+        solved: "SOLVED",
+        partial: "PARTIAL",
+        cold: "COLD",
+        twist: "TWIST REVEALED",
+      }[resolution.outcome];
+
+      const message = [
+        `=== CASE ${outcomeEmoji} ===`,
+        `${activeCase.title}`,
+        "",
+        resolution.description,
+        "",
+        `Your theory: "${theory}"`,
+        "",
+        "Rewards:",
+        resolution.formattedRewards,
+      ].join("\n");
+
+      return {
+        success: true,
+        message,
+        action: "case_resolved",
+        data: {
+          case: { ...activeCase, outcome: resolution.outcome, theory },
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to solve case";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
