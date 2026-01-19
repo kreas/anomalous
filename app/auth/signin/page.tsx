@@ -19,7 +19,7 @@ function SignInContent() {
         <div className="border border-irc-border bg-irc-sidebar-bg p-4 mb-4">
           <div className="text-irc-cyan text-center">
             <pre className="text-xs leading-tight">
-{`
+              {`
  █████╗ ███╗   ██╗ ██████╗ ███╗   ███╗ █████╗ ██╗  ██╗   ██╗
 ██╔══██╗████╗  ██║██╔═══██╗████╗ ████║██╔══██╗██║  ╚██╗ ██╔╝
 ███████║██╔██╗ ██║██║   ██║██╔████╔██║███████║██║   ╚████╔╝
@@ -35,7 +35,9 @@ function SignInContent() {
         <div className="border border-irc-border bg-irc-sidebar-bg p-6">
           <div className="text-irc-system text-sm mb-4 font-mono">
             <span className="text-irc-timestamp">[SYSTEM]</span>{" "}
-            <span className="text-irc-white">Authentication required to access AnomaNet</span>
+            <span className="text-irc-white">
+              Authentication required to access sh.ghost.gs
+            </span>
           </div>
 
           <div className="text-irc-system text-sm mb-6 font-mono">
@@ -68,7 +70,8 @@ function SignInContent() {
         {/* Status bar */}
         <div className="border border-t-0 border-irc-border bg-irc-input-bg px-4 py-2">
           <div className="text-irc-timestamp text-xs font-mono">
-            <span className="text-irc-green">●</span> AnomaNet v1.0 | Secure Connection Required
+            <span className="text-irc-green">●</span> sh.ghost.gs v1.0 | Secure
+            Connection Required
           </div>
         </div>
       </div>
