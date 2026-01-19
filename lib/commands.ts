@@ -776,3 +776,266 @@ registerCommand({
     }
   },
 });
+
+// =============================================================================
+// Evidence Commands (Phase 3)
+// =============================================================================
+
+import {
+  getAllEvidence,
+  getEvidenceById,
+  getUnexaminedCount,
+  examineEvidence as examineEvidenceFromStorage,
+  getEvidenceByType,
+  connectEvidence as connectEvidenceFromStorage,
+  checkConnection,
+} from "./evidence";
+import { formatEvidenceContent } from "./evidence-formatters";
+
+/**
+ * /evidence - List or examine evidence
+ */
+registerCommand({
+  name: "evidence",
+  aliases: ["ev", "inventory", "inv"],
+  description: "List evidence or examine a specific piece",
+  usage: "/evidence [id] [examine]",
+  handler: async (args, context) => {
+    try {
+      // No args - list all evidence
+      if (args.length === 0) {
+        const evidenceByType = await getEvidenceByType(context.userId);
+        const unexaminedCount = await getUnexaminedCount(context.userId);
+        const allEvidence = await getAllEvidence(context.userId);
+
+        if (allEvidence.length === 0) {
+          return {
+            success: true,
+            message:
+              "Your evidence inventory is empty.\nComplete cases or use /signal to acquire evidence.",
+            action: "system_message",
+          };
+        }
+
+        const typeLabels: Record<string, string> = {
+          chat_log: "Chat Logs",
+          data_fragment: "Data Fragments",
+          testimony: "Testimonies",
+          access_key: "Access Keys",
+          tool: "Tools",
+          coordinates: "Coordinates",
+        };
+
+        const sections: string[] = [];
+        for (const [type, items] of Object.entries(evidenceByType)) {
+          if (items.length === 0) continue;
+
+          const itemList = items
+            .map((e) => {
+              const newBadge = e.examined ? "" : "[NEW] ";
+              return `  ${newBadge}${e.id} - ${e.name}`;
+            })
+            .join("\n");
+
+          sections.push(`${typeLabels[type] || type}:\n${itemList}`);
+        }
+
+        const header = `Evidence Inventory (${allEvidence.length} items${unexaminedCount > 0 ? `, ${unexaminedCount} new` : ""}):\n`;
+
+        return {
+          success: true,
+          message:
+            header +
+            "\n" +
+            sections.join("\n\n") +
+            "\n\nUse /evidence <id> to view, /evidence examine <id> to examine",
+          action: "evidence_list",
+          data: {
+            evidenceList: allEvidence,
+            newCount: unexaminedCount,
+          },
+        };
+      }
+
+      // Check for examine subcommand
+      if (args[0].toLowerCase() === "examine" && args.length >= 2) {
+        const evidenceId = args[1];
+        const evidence = await getEvidenceById(context.userId, evidenceId);
+
+        if (!evidence) {
+          return {
+            success: false,
+            message: `Evidence not found: ${evidenceId}`,
+            action: "system_message",
+          };
+        }
+
+        // Already examined - just show content
+        if (evidence.examined) {
+          const formattedContent = formatEvidenceContent(evidence);
+          return {
+            success: true,
+            message: formattedContent,
+            action: "evidence_detail",
+            data: {
+              evidenceItem: evidence,
+              content: evidence.content,
+            },
+          };
+        }
+
+        // Mark as examined
+        const examinedEvidence = await examineEvidenceFromStorage(
+          context.userId,
+          evidenceId,
+        );
+
+        const formattedContent = formatEvidenceContent(examinedEvidence);
+        const xpReward = getExaminationXP(examinedEvidence.rarity);
+
+        return {
+          success: true,
+          message: `=== EXAMINING: ${examinedEvidence.name} ===\n\n${formattedContent}\n\n+${xpReward} XP for examination`,
+          action: "evidence_examined",
+          data: {
+            evidenceItem: examinedEvidence,
+            content: examinedEvidence.content,
+          },
+        };
+      }
+
+      // View specific evidence
+      const evidenceId = args[0];
+      const evidence = await getEvidenceById(context.userId, evidenceId);
+
+      if (!evidence) {
+        return {
+          success: false,
+          message: `Evidence not found: ${evidenceId}`,
+          action: "system_message",
+        };
+      }
+
+      const examineStatus = evidence.examined
+        ? "Examined"
+        : "Not examined - use /evidence examine " + evidenceId;
+
+      const details = [
+        `=== ${evidence.name} ===`,
+        `Type: ${evidence.type} | Rarity: ${evidence.rarity.toUpperCase()}`,
+        `Status: ${examineStatus}`,
+        "",
+        evidence.description,
+      ];
+
+      if (evidence.examined && evidence.content) {
+        details.push("");
+        details.push(formatEvidenceContent(evidence));
+      }
+
+      if (evidence.connections && evidence.connections.length > 0) {
+        details.push("");
+        details.push(
+          `Potential connections: ${evidence.connections.length} items`,
+        );
+      }
+
+      return {
+        success: true,
+        message: details.join("\n"),
+        action: "evidence_detail",
+        data: {
+          evidenceItem: evidence,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load evidence";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * /connect - Connect two pieces of evidence
+ */
+registerCommand({
+  name: "connect",
+  aliases: ["link"],
+  description: "Attempt to connect two pieces of evidence",
+  usage: "/connect <evidence_id_1> <evidence_id_2>",
+  handler: async (args, context) => {
+    if (args.length < 2) {
+      return {
+        success: false,
+        message: "Usage: /connect <evidence_id_1> <evidence_id_2>",
+        action: "system_message",
+      };
+    }
+
+    const [evidenceId1, evidenceId2] = args;
+
+    try {
+      // First check if connection is possible
+      const checkResult = await checkConnection(
+        context.userId,
+        evidenceId1,
+        evidenceId2,
+      );
+
+      if (!checkResult.valid) {
+        return {
+          success: false,
+          message: checkResult.insight || "No connection found.",
+          action: "connection_failed",
+          data: {
+            evidenceIds: [evidenceId1, evidenceId2],
+          },
+        };
+      }
+
+      // Create the connection
+      const connection = await connectEvidenceFromStorage(
+        context.userId,
+        evidenceId1,
+        evidenceId2,
+      );
+
+      const xpReward = connection.reward?.xp || 10;
+
+      return {
+        success: true,
+        message: `=== CONNECTION DISCOVERED ===\n\n${connection.insight}\n\n+${xpReward} XP`,
+        action: "connection_found",
+        data: {
+          connection,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to connect evidence";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * Calculate XP reward for examining evidence
+ */
+function getExaminationXP(rarity: string): number {
+  const xpByRarity: Record<string, number> = {
+    common: 5,
+    uncommon: 10,
+    rare: 20,
+    legendary: 50,
+  };
+  return xpByRarity[rarity] || 5;
+}
