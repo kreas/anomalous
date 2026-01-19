@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { DEV_USER_ID } from "@/lib/constants";
+import { getUserId } from "@/lib/auth-helpers";
 import {
   getAvailableCases,
   getAvailableCase,
@@ -15,11 +15,7 @@ import {
   completeCase,
   MAX_ACTIVE_CASES,
 } from "@/lib/cases";
-import {
-  getAllEvidence,
-  getConnections,
-  getEvidenceForCase,
-} from "@/lib/evidence";
+import { getAllEvidence, getConnections } from "@/lib/evidence";
 import {
   resolveCase,
   getMissingEvidenceHints,
@@ -41,11 +37,13 @@ export async function GET(request: Request) {
   const caseId = searchParams.get("id");
 
   try {
+    const userId = await getUserId();
+
     // Get a single case by ID (checks both active and available)
     // Check this FIRST before type-based queries
     if (caseId) {
       // First check active cases
-      let caseData = await getActiveCase(DEV_USER_ID, caseId);
+      let caseData = await getActiveCase(userId, caseId);
 
       // If not active, check available cases
       if (!caseData) {
@@ -72,7 +70,7 @@ export async function GET(request: Request) {
     }
 
     if (type === "active") {
-      const { active, history } = await getUserCases(DEV_USER_ID);
+      const { active, history } = await getUserCases(userId);
       return NextResponse.json({
         active,
         history,
@@ -98,6 +96,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { action, caseId } = body;
 
@@ -106,7 +105,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "caseId required" }, { status: 400 });
       }
 
-      const acceptedCase = await acceptCase(DEV_USER_ID, caseId);
+      const acceptedCase = await acceptCase(userId, caseId);
 
       // Grant case-relevant evidence from the starter pool
       const allStarterEvidence = createStarterEvidence();
@@ -121,7 +120,7 @@ export async function POST(request: Request) {
           acquiredAt: new Date().toISOString(),
           acquiredFrom: "case_accept" as const,
         }));
-        await addMultipleEvidence(DEV_USER_ID, evidenceToGrant);
+        await addMultipleEvidence(userId, evidenceToGrant);
       }
 
       return NextResponse.json({
@@ -135,7 +134,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "caseId required" }, { status: 400 });
       }
 
-      const abandonedCase = await abandonCase(DEV_USER_ID, caseId);
+      const abandonedCase = await abandonCase(userId, caseId);
       return NextResponse.json({ case: abandonedCase });
     }
 
@@ -143,7 +142,7 @@ export async function POST(request: Request) {
       // Seed cases and grant starter evidence to user
       await seedAvailableCases();
       const { evidence } = getStarterContent();
-      await addMultipleEvidence(DEV_USER_ID, evidence);
+      await addMultipleEvidence(userId, evidence);
 
       return NextResponse.json({ success: true, seeded: true });
     }
@@ -153,7 +152,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "caseId required" }, { status: 400 });
       }
 
-      const activeCase = await getActiveCase(DEV_USER_ID, caseId);
+      const activeCase = await getActiveCase(userId, caseId);
       if (!activeCase) {
         return NextResponse.json({ error: "Case not found" }, { status: 404 });
       }
@@ -169,7 +168,7 @@ export async function POST(request: Request) {
       }
 
       // Get the active case
-      const activeCase = await getActiveCase(DEV_USER_ID, caseId);
+      const activeCase = await getActiveCase(userId, caseId);
       if (!activeCase) {
         return NextResponse.json(
           { error: "Case not found in active cases" },
@@ -178,8 +177,8 @@ export async function POST(request: Request) {
       }
 
       // Get evidence and connections
-      const allEvidence = await getAllEvidence(DEV_USER_ID);
-      const connections = await getConnections(DEV_USER_ID);
+      const allEvidence = await getAllEvidence(userId);
+      const connections = await getConnections(userId);
 
       // Calculate completeness
       const completeness = calculateEvidenceCompleteness(
@@ -217,7 +216,7 @@ export async function POST(request: Request) {
       );
 
       // Complete the case in storage
-      await completeCase(DEV_USER_ID, caseId, resolution.outcome, theory);
+      await completeCase(userId, caseId, resolution.outcome, theory);
 
       return NextResponse.json({
         resolved: true,

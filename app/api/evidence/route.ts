@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { DEV_USER_ID } from "@/lib/constants";
+import { getUserId } from "@/lib/auth-helpers";
 import {
   getAllEvidence,
   getEvidenceById,
@@ -14,7 +14,6 @@ import {
   getUnexaminedCount,
   getEvidenceByType,
   addEvidence,
-  getConnections,
 } from "@/lib/evidence";
 import { formatEvidenceContent } from "@/lib/evidence-formatters";
 
@@ -26,9 +25,11 @@ export async function GET(request: Request) {
   const evidenceId = searchParams.get("id");
 
   try {
+    const userId = await getUserId();
+
     if (evidenceId) {
       // Get specific evidence
-      const evidence = await getEvidenceById(DEV_USER_ID, evidenceId);
+      const evidence = await getEvidenceById(userId, evidenceId);
       if (!evidence) {
         return NextResponse.json(
           { error: "Evidence not found" },
@@ -39,9 +40,9 @@ export async function GET(request: Request) {
     }
 
     // Get full inventory
-    const items = await getAllEvidence(DEV_USER_ID);
-    const byType = await getEvidenceByType(DEV_USER_ID);
-    const unexaminedCount = await getUnexaminedCount(DEV_USER_ID);
+    const items = await getAllEvidence(userId);
+    const byType = await getEvidenceByType(userId);
+    const unexaminedCount = await getUnexaminedCount(userId);
 
     return NextResponse.json({
       items,
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { action, evidenceId, evidenceId1, evidenceId2, evidence } = body;
 
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const examined = await examineEvidence(DEV_USER_ID, evidenceId);
+      const examined = await examineEvidence(userId, evidenceId);
       const formattedContent = formatEvidenceContent(examined);
       return NextResponse.json({ evidence: examined, formattedContent });
     }
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
 
       // First check if connection is possible
       const checkResult = await checkConnection(
-        DEV_USER_ID,
+        userId,
         evidenceId1,
         evidenceId2,
       );
@@ -103,7 +105,7 @@ export async function POST(request: Request) {
 
       // Create the connection
       const connection = await connectEvidence(
-        DEV_USER_ID,
+        userId,
         evidenceId1,
         evidenceId2,
       );
@@ -118,7 +120,7 @@ export async function POST(request: Request) {
         );
       }
 
-      await addEvidence(DEV_USER_ID, evidence);
+      await addEvidence(userId, evidence);
       return NextResponse.json({ success: true });
     }
 

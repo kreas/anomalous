@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import { KeyboardResize } from "@capacitor/keyboard";
 
 const baseConfig = {
   appId: "com.anomalous.chat",
@@ -6,7 +7,7 @@ const baseConfig = {
   webDir: "out",
   plugins: {
     Keyboard: {
-      resize: "none" as const,
+      resize: KeyboardResize.None,
       resizeOnFullScreen: false,
     },
   },

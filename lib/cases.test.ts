@@ -6,8 +6,6 @@ import {
   saveAvailableCase,
   getUserCaseState,
   getOrCreateUserCaseState,
-  saveUserCaseState,
-  getUserCases,
   acceptCase,
   updateUserCase,
   completeCase,
@@ -90,9 +88,7 @@ describe("cases", () => {
         "cases/available/case-1.json",
         "cases/available/case-2.json",
       ]);
-      mockGetObject
-        .mockResolvedValueOnce(case1)
-        .mockResolvedValueOnce(case2);
+      mockGetObject.mockResolvedValueOnce(case1).mockResolvedValueOnce(case2);
 
       const cases = await getAvailableCases();
       expect(cases).toHaveLength(2);
@@ -133,7 +129,7 @@ describe("cases", () => {
 
       expect(mockPutObject).toHaveBeenCalledWith(
         "cases/available/test-case-001.json",
-        testCase
+        testCase,
       );
     });
   });
@@ -208,7 +204,7 @@ describe("cases", () => {
       mockGetObject.mockResolvedValue(null);
 
       await expect(acceptCase("user-123", "nonexistent")).rejects.toThrow(
-        "Case not found"
+        "Case not found",
       );
     });
 
@@ -225,7 +221,7 @@ describe("cases", () => {
         .mockResolvedValueOnce(userState);
 
       await expect(acceptCase("user-123", "test-case-001")).rejects.toThrow(
-        "already accepted"
+        "already accepted",
       );
     });
 
@@ -245,7 +241,7 @@ describe("cases", () => {
         .mockResolvedValueOnce(userState);
 
       await expect(acceptCase("user-123", "case-4")).rejects.toThrow(
-        `Maximum active cases (${MAX_ACTIVE_CASES})`
+        `Maximum active cases (${MAX_ACTIVE_CASES})`,
       );
     });
   });
@@ -279,7 +275,7 @@ describe("cases", () => {
       mockGetObject.mockResolvedValue(userState);
 
       await expect(
-        updateUserCase("user-123", "nonexistent", { status: "in_progress" })
+        updateUserCase("user-123", "nonexistent", { status: "in_progress" }),
       ).rejects.toThrow("Active case not found");
     });
   });
@@ -299,7 +295,7 @@ describe("cases", () => {
         "user-123",
         "test-case-001",
         "solved",
-        "The data was corrupted by a rogue process"
+        "The data was corrupted by a rogue process",
       );
 
       expect(result.status).toBe("solved");
@@ -327,7 +323,7 @@ describe("cases", () => {
         "user-123",
         "test-case-001",
         "twist",
-        "The corruption was intentional"
+        "The corruption was intentional",
       );
 
       expect(result.status).toBe("solved"); // Twist maps to solved

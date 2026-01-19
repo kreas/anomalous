@@ -3,8 +3,6 @@ import {
   createDefaultEvidenceInventory,
   getEvidenceInventory,
   getOrCreateEvidenceInventory,
-  saveEvidenceInventory,
-  getAllEvidence,
   addEvidence,
   addMultipleEvidence,
   updateEvidence,
@@ -48,7 +46,7 @@ function createTestEvidence(overrides: Partial<Evidence> = {}): Evidence {
 
 // Helper to create test inventory
 function createTestInventory(
-  overrides: Partial<EvidenceInventory> = {}
+  overrides: Partial<EvidenceInventory> = {},
 ): EvidenceInventory {
   return {
     items: [],
@@ -120,7 +118,8 @@ describe("evidence", () => {
       await addEvidence("user-123", evidence);
 
       expect(mockPutObject).toHaveBeenCalled();
-      const savedInventory = mockPutObject.mock.calls[0][1] as EvidenceInventory;
+      const savedInventory = mockPutObject.mock
+        .calls[0][1] as EvidenceInventory;
       expect(savedInventory.items).toHaveLength(1);
       expect(savedInventory.items[0].id).toBe("test-evidence-001");
     });
@@ -131,7 +130,7 @@ describe("evidence", () => {
       mockGetObject.mockResolvedValue(inventory);
 
       await expect(addEvidence("user-123", evidence)).rejects.toThrow(
-        "already in inventory"
+        "already in inventory",
       );
     });
   });
@@ -147,7 +146,8 @@ describe("evidence", () => {
       ];
       await addMultipleEvidence("user-123", items);
 
-      const savedInventory = mockPutObject.mock.calls[0][1] as EvidenceInventory;
+      const savedInventory = mockPutObject.mock
+        .calls[0][1] as EvidenceInventory;
       expect(savedInventory.items).toHaveLength(2);
     });
 
@@ -162,7 +162,8 @@ describe("evidence", () => {
       ];
       await addMultipleEvidence("user-123", items);
 
-      const savedInventory = mockPutObject.mock.calls[0][1] as EvidenceInventory;
+      const savedInventory = mockPutObject.mock
+        .calls[0][1] as EvidenceInventory;
       expect(savedInventory.items).toHaveLength(2);
     });
   });
@@ -185,7 +186,7 @@ describe("evidence", () => {
       mockGetObject.mockResolvedValue(inventory);
 
       await expect(
-        updateEvidence("user-123", "nonexistent", { examined: true })
+        updateEvidence("user-123", "nonexistent", { examined: true }),
       ).rejects.toThrow("Evidence not found");
     });
   });
@@ -198,7 +199,8 @@ describe("evidence", () => {
 
       await removeEvidence("user-123", "test-evidence-001");
 
-      const savedInventory = mockPutObject.mock.calls[0][1] as EvidenceInventory;
+      const savedInventory = mockPutObject.mock
+        .calls[0][1] as EvidenceInventory;
       expect(savedInventory.items).toHaveLength(0);
     });
 
@@ -207,7 +209,7 @@ describe("evidence", () => {
       mockGetObject.mockResolvedValue(inventory);
 
       await expect(removeEvidence("user-123", "nonexistent")).rejects.toThrow(
-        "Evidence not found"
+        "Evidence not found",
       );
     });
   });
@@ -319,7 +321,7 @@ describe("evidence", () => {
         mockGetObject.mockResolvedValue(inventory);
 
         await expect(addConnection("user-123", connection)).rejects.toThrow(
-          "already exists"
+          "already exists",
         );
       });
 
@@ -339,7 +341,7 @@ describe("evidence", () => {
         };
 
         await expect(
-          addConnection("user-123", reverseConnection)
+          addConnection("user-123", reverseConnection),
         ).rejects.toThrow("already exists");
       });
     });
@@ -423,9 +425,9 @@ describe("evidence", () => {
         const inventory = createTestInventory({ items: [ev1, ev2] });
         mockGetObject.mockResolvedValue(inventory);
 
-        await expect(connectEvidence("user-123", "ev-1", "ev-2")).rejects.toThrow(
-          "No clear connection"
-        );
+        await expect(
+          connectEvidence("user-123", "ev-1", "ev-2"),
+        ).rejects.toThrow("No clear connection");
       });
     });
   });
