@@ -15,12 +15,7 @@ registerCommand({
   handler: () => {
     return {
       success: true,
-      action: "api_call",
-      apiCall: {
-        endpoint: "/api/auth/signout",
-        method: "POST",
-        handler: "auth_signout",
-      },
+      action: "auth_signout",
       message: "Disconnecting from AnomaNet...",
     };
   },

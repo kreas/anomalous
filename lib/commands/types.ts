@@ -50,7 +50,9 @@ export type CommandAction =
   | "connection_failed"
   // Solve actions (Phase 3)
   | "solve_prompt"
-  | "case_resolved";
+  | "case_resolved"
+  // Auth actions
+  | "auth_signout";
 
 /**
  * API call configuration for client-side execution

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Capacitor } from "@capacitor/core";
+import { signOut } from "next-auth/react";
 import { ChatMessage, Message } from "@/app/components/ChatMessage";
 import {
   ChannelList,
@@ -677,12 +678,6 @@ export default function HomeContent() {
           break;
         }
 
-        case "auth_signout": {
-          // Sign out - redirect to sign-in page
-          window.location.href = "/api/auth/signout";
-          break;
-        }
-
         case "auth_whoami": {
           // GET /api/profile response
           const profile = data.profile;
@@ -891,6 +886,15 @@ export default function HomeContent() {
           if (result.message) {
             addSystemMessage(result.message);
           }
+          break;
+
+        // Auth actions
+        case "auth_signout":
+          if (result.message) {
+            addSystemMessage(result.message);
+          }
+          // Use next-auth signOut to properly handle session cleanup
+          signOut({ callbackUrl: "/auth/signin" });
           break;
       }
     },
