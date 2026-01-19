@@ -35,3 +35,36 @@ export {
   isValidChannel,
   isValidChannelMessage,
 } from "./channel";
+
+// Case types (Phase 3)
+export type {
+  CaseType,
+  CaseRarity,
+  CaseStatus,
+  CaseOutcome,
+  RequiredEvidence,
+  CaseRewards,
+  CaseSource,
+  Case,
+  UserCaseState,
+} from "./case";
+
+export { isValidCase, isValidUserCaseState } from "./case";
+
+// Evidence types (Phase 3)
+export type {
+  EvidenceType,
+  EvidenceRarity,
+  EvidenceSource,
+  Evidence,
+  EvidenceMetadata,
+  EvidenceConnection,
+  EvidenceConnectionReward,
+  EvidenceInventory,
+} from "./evidence";
+
+export {
+  isValidEvidence,
+  isValidEvidenceInventory,
+  isValidEvidenceConnection,
+} from "./evidence";
