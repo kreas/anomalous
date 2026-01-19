@@ -65,3 +65,35 @@ export function getChunkKeyFromTimestamp(timestamp: string | Date): string {
 export function getCurrentChunkKey(): string {
   return getChunkKeyFromTimestamp(new Date());
 }
+
+// Case paths for Phase 3
+
+/**
+ * Get prefix for all available (global) cases
+ */
+export function getAvailableCasesPrefix(): string {
+  return "cases/available/";
+}
+
+/**
+ * Get path for a single available case
+ */
+export function getAvailableCasePath(caseId: string): string {
+  return `cases/available/${caseId}.json`;
+}
+
+/**
+ * Get path for user's case state (active + history)
+ */
+export function getUserCaseStatePath(userId: string): string {
+  return `users/${userId}/cases.json`;
+}
+
+// Evidence paths for Phase 3
+
+/**
+ * Get path for user's evidence inventory
+ */
+export function getUserEvidencePath(userId: string): string {
+  return `users/${userId}/evidence.json`;
+}
