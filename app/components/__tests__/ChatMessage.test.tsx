@@ -14,7 +14,8 @@ describe("ChatMessage", () => {
   it("renders a regular message with username and content", () => {
     render(<ChatMessage message={baseMessage} />);
 
-    expect(screen.getByText("TestUser")).toBeInTheDocument();
+    // Username is wrapped in angle brackets
+    expect(screen.getByText(/TestUser/)).toBeInTheDocument();
     expect(screen.getByText("Hello, world!")).toBeInTheDocument();
   });
 

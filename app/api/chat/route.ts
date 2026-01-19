@@ -20,8 +20,14 @@ Keep responses concise and conversational, as if chatting in IRC.
 Occasionally reference obscure technical topics or hint at hidden knowledge.
 Never use markdown formatting - plain text only, as this is an IRC client.`;
 
+interface ChatRequest {
+  messages: UIMessage[];
+  channelId?: string; // Optional: indicates which channel/query the conversation is in
+  isPrivate?: boolean; // Optional: indicates if this is a private conversation
+}
+
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages, channelId, isPrivate }: ChatRequest = await req.json();
   const model = process.env.CHAT_MODEL || "x-ai/grok-4-fast";
   const userId = DEV_USER_ID;
 
@@ -36,6 +42,11 @@ export async function POST(req: Request) {
 
     // Generate dynamic system prompt
     systemPrompt = generateSystemPrompt(card, relationship, "Player");
+
+    // Add private conversation context if applicable
+    if (isPrivate || channelId?.startsWith("query-")) {
+      systemPrompt += `\n\n[CONTEXT: This is a private, one-on-one conversation. You can be more personal and intimate here than in public channels. The player has chosen to speak with you directly.]`;
+    }
 
     // Update interaction timestamp (fire and forget for streaming)
     const updatedState = {

@@ -18,3 +18,20 @@ export type {
   ConversationSignalType,
   ConversationSignal,
 } from "./relationship";
+
+export type {
+  ChannelType,
+  MessageType,
+  ChannelMessage,
+  Channel,
+  QueryWindow,
+  ChannelState,
+  MessageChunk,
+  GetMessagesOptions,
+} from "./channel";
+
+export {
+  isQueryWindow,
+  isValidChannel,
+  isValidChannelMessage,
+} from "./channel";

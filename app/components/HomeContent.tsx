@@ -1,24 +1,28 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Capacitor } from "@capacitor/core";
 import { ChatMessage, Message } from "@/app/components/ChatMessage";
-import { ChannelList, Channel } from "@/app/components/ChannelList";
+import {
+  ChannelList,
+  ChannelListItem,
+  channelToListItem,
+  queryWindowToListItem,
+} from "@/app/components/ChannelList";
 import { UserList, User } from "@/app/components/UserList";
 import { ChatInput } from "@/app/components/ChatInput";
 import type { EntityPresence } from "@/app/api/entities/route";
-
-// Mock data for channels
-const mockChannels: Channel[] = [
-  { id: "1", name: "lobby", unreadCount: 0 },
-  { id: "2", name: "mysteries", unreadCount: 3 },
-  { id: "3", name: "tech-support", unreadCount: 0 },
-  { id: "4", name: "off-topic", unreadCount: 1 },
-  { id: "5", name: "signals", unreadCount: 0 },
-  { id: "6", name: "archive", unreadCount: 0 },
-];
+import type { ChannelState, ChannelMessage as ChannelMsg } from "@/types";
+import {
+  parseCommand,
+  executeCommand,
+  type CommandContext,
+  type CommandResult,
+} from "@/lib/commands";
+import { getChannelIntro } from "@/lib/channel-intros";
+import { isQueryWindowId, getQueryWindowId } from "@/lib/queries";
 
 // Static mock users (non-entity NPCs)
 const staticMockUsers: User[] = [
@@ -30,35 +34,75 @@ const staticMockUsers: User[] = [
   { id: "6", username: "ShadowNet", status: "offline" },
 ];
 
-// Initial IRC-style messages for flavor
-const initialIRCMessages: Message[] = [
-  {
-    id: "sys-1",
-    timestamp: new Date(),
-    username: "SYSTEM",
-    content: "Connected to AnomaNet. Welcome to #lobby.",
-    type: "system",
-  },
-];
-
 export default function HomeContent() {
-  const [channels] = useState<Channel[]>(mockChannels);
-  const [activeChannelId, setActiveChannelId] = useState("1");
+  // Channel state from R2
+  const [channelState, setChannelState] = useState<ChannelState | null>(null);
+  const [activeChannelId, setActiveChannelId] = useState("lobby");
+
+  // Message cache per channel (client-side)
+  const [messageCache, setMessageCache] = useState<Record<string, Message[]>>(
+    {},
+  );
+  const [loadingChannel, setLoadingChannel] = useState(false);
+
+  // Entity and user state
   const [entityUsers, setEntityUsers] = useState<User[]>([]);
-  const [ircMessages, setIrcMessages] = useState<Message[]>(initialIRCMessages);
+  const [entityName, setEntityName] = useState("Anonymous");
+
+  // UI state
   const [showChannels, setShowChannels] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [input, setInput] = useState("");
-  const [entityName, setEntityName] = useState("Anonymous");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const activeChannel = channels.find((c) => c.id === activeChannelId);
+  // Get current channel/query info
+  const isCurrentChannelQuery = isQueryWindowId(activeChannelId);
+  const activeChannel = useMemo(() => {
+    if (!channelState) return null;
+    if (isCurrentChannelQuery) {
+      return channelState.queryWindows.find((q) => q.id === activeChannelId);
+    }
+    return channelState.channels.find((c) => c.id === activeChannelId);
+  }, [channelState, activeChannelId, isCurrentChannelQuery]);
+
+  // Build channel list items
+  const channelListItems: ChannelListItem[] = useMemo(() => {
+    if (!channelState) return [];
+    return channelState.channels.map(channelToListItem);
+  }, [channelState]);
+
+  const queryWindowItems: ChannelListItem[] = useMemo(() => {
+    if (!channelState) return [];
+    return channelState.queryWindows.map(queryWindowToListItem);
+  }, [channelState]);
 
   // Combine entity users with static mock users
   const users = useMemo(() => {
     return [...entityUsers, ...staticMockUsers];
   }, [entityUsers]);
+
+  // Get messages for current channel
+  const currentMessages = useMemo(() => {
+    return messageCache[activeChannelId] || [];
+  }, [messageCache, activeChannelId]);
+
+  // Fetch channel state on mount
+  useEffect(() => {
+    const fetchChannelState = async () => {
+      try {
+        const response = await fetch("/api/channels");
+        const data = await response.json();
+        if (data.success && data.data) {
+          setChannelState(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch channel state:", error);
+      }
+    };
+
+    fetchChannelState();
+  }, []);
 
   // Fetch entities on mount
   useEffect(() => {
@@ -77,25 +121,11 @@ export default function HomeContent() {
 
         setEntityUsers(entityAsUsers);
 
-        // Store entity name for chat display
         if (data.entities.length > 0) {
           setEntityName(data.entities[0].name);
-
-          // Add join message for entity
-          setIrcMessages((prev) => [
-            ...prev,
-            {
-              id: `join-${data.entities[0].id}`,
-              timestamp: new Date(),
-              username: data.entities[0].name,
-              content: "",
-              type: "join",
-            },
-          ]);
         }
       } catch (error) {
         console.error("Failed to fetch entities:", error);
-        // Fallback to default Anonymous
         setEntityUsers([
           {
             id: "entity-anonymous",
@@ -106,67 +136,578 @@ export default function HomeContent() {
           },
         ]);
         setEntityName("Anonymous");
-
-        setIrcMessages((prev) => [
-          ...prev,
-          {
-            id: "join-anonymous",
-            timestamp: new Date(),
-            username: "Anonymous",
-            content: "",
-            type: "join",
-          },
-        ]);
       }
     };
 
     fetchEntities();
   }, []);
 
-  // AI Chat hook - v5+ API with DefaultChatTransport
+  // Load messages for a channel
+  const loadChannelMessages = useCallback(
+    async (channelId: string) => {
+      // Skip if already cached
+      if (messageCache[channelId]) return;
+
+      setLoadingChannel(true);
+      try {
+        const response = await fetch(
+          `/api/messages?channelId=${encodeURIComponent(channelId)}&limit=50`,
+        );
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          // Convert ChannelMessage to Message format
+          const messages: Message[] = data.data.map((msg: ChannelMsg) => ({
+            id: msg.id,
+            timestamp: new Date(msg.timestamp),
+            username: msg.username,
+            content: msg.content,
+            type: msg.type === "part" ? "leave" : msg.type,
+          }));
+
+          // If no messages, add channel intro
+          if (messages.length === 0 && !isQueryWindowId(channelId)) {
+            const channel = channelState?.channels.find(
+              (c) => c.id === channelId,
+            );
+            if (channel) {
+              const intro = getChannelIntro(channel.type);
+              if (intro) {
+                messages.push({
+                  id: `intro-${channelId}`,
+                  timestamp: new Date(),
+                  username: "***",
+                  content: intro,
+                  type: "system",
+                });
+              }
+            }
+          }
+
+          setMessageCache((prev) => ({
+            ...prev,
+            [channelId]: messages,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load messages:", error);
+        // Add error message
+        setMessageCache((prev) => ({
+          ...prev,
+          [channelId]: [
+            {
+              id: `error-${channelId}`,
+              timestamp: new Date(),
+              username: "***",
+              content: "Failed to load message history.",
+              type: "system",
+            },
+          ],
+        }));
+      } finally {
+        setLoadingChannel(false);
+      }
+    },
+    [messageCache, channelState],
+  );
+
+  // Load messages when channel changes
+  useEffect(() => {
+    if (activeChannelId) {
+      loadChannelMessages(activeChannelId);
+    }
+  }, [activeChannelId, loadChannelMessages]);
+
+  // Add initial intro message for lobby if no messages cached
+  useEffect(() => {
+    if (channelState && !messageCache["lobby"]) {
+      setMessageCache((prev) => ({
+        ...prev,
+        lobby: [
+          {
+            id: "intro-lobby",
+            timestamp: new Date(),
+            username: "***",
+            content: getChannelIntro("lobby"),
+            type: "system",
+          },
+        ],
+      }));
+    }
+  }, [channelState, messageCache]);
+
+  // AI Chat hook for entity conversations
   const {
     messages: aiMessages,
-    sendMessage,
+    sendMessage: sendAIMessage,
     status,
     error,
+    setMessages: setAIMessages,
   } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
     }),
   });
 
-  // Convert AI messages to IRC format and merge with IRC-only messages
+  // Track which AI messages have been persisted to avoid duplicates
+  const persistedMessageIds = useRef<Set<string>>(new Set());
+
+  // Track which channel the current AI conversation belongs to
+  const aiConversationChannelRef = useRef<string>(activeChannelId);
+
+  // Persist AI responses when streaming completes (only assistant messages)
+  useEffect(() => {
+    if (status === "ready" && aiMessages.length > 0) {
+      // Find assistant messages that haven't been persisted yet
+      const newAssistantMessages = aiMessages.filter(
+        (msg) =>
+          msg.role === "assistant" && !persistedMessageIds.current.has(msg.id),
+      );
+
+      // Persist each new assistant message
+      newAssistantMessages.forEach(async (msg) => {
+        // Extract content
+        let content = "";
+        if (typeof msg.content === "string") {
+          content = msg.content;
+        } else if (msg.parts) {
+          content = msg.parts
+            .filter(
+              (part): part is { type: "text"; text: string } =>
+                part.type === "text",
+            )
+            .map((part) => part.text)
+            .join("");
+        }
+
+        if (content) {
+          // Persist to R2 using the channel where conversation started
+          await fetch("/api/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              channelId: aiConversationChannelRef.current,
+              content,
+              username: entityName,
+              type: "message",
+            }),
+          });
+
+          // Mark as persisted
+          persistedMessageIds.current.add(msg.id);
+        }
+      });
+    }
+  }, [status, aiMessages, entityName]);
+
+  // Clear AI messages when switching to a different channel type
+  // This prevents messages from appearing in wrong channels
+  useEffect(() => {
+    // If switching away from entity conversation context, clear AI state
+    const wasEntityContext =
+      aiConversationChannelRef.current === "lobby" ||
+      aiConversationChannelRef.current.includes("anonymous");
+    const isEntityContext =
+      activeChannelId === "lobby" || activeChannelId.includes("anonymous");
+
+    if (wasEntityContext && !isEntityContext) {
+      // Switching from entity context to non-entity channel
+      setAIMessages([]);
+      persistedMessageIds.current.clear();
+    }
+
+    // Update the ref to track current channel
+    aiConversationChannelRef.current = activeChannelId;
+  }, [activeChannelId, setAIMessages]);
+
+  // Convert AI messages and merge with channel messages
   const allMessages = useMemo(() => {
-    const convertedAIMessages: Message[] = aiMessages.map((msg) => {
-      // AI SDK v5+ uses parts array instead of content string
-      let content = "";
-      if (typeof msg.content === "string") {
-        content = msg.content;
-      } else if (msg.parts) {
-        // Extract text from parts array
-        content = msg.parts
-          .filter(
-            (part): part is { type: "text"; text: string } =>
-              part.type === "text",
-          )
-          .map((part) => part.text)
-          .join("");
+    // For query windows with the entity, include AI messages
+    if (isCurrentChannelQuery && activeChannelId.includes("anonymous")) {
+      const convertedAIMessages: Message[] = aiMessages.map((msg) => {
+        let content = "";
+        if (typeof msg.content === "string") {
+          content = msg.content;
+        } else if (msg.parts) {
+          content = msg.parts
+            .filter(
+              (part): part is { type: "text"; text: string } =>
+                part.type === "text",
+            )
+            .map((part) => part.text)
+            .join("");
+        }
+
+        return {
+          id: msg.id,
+          timestamp: new Date(),
+          username: msg.role === "user" ? "You" : entityName,
+          content,
+          type: "message" as const,
+        };
+      });
+
+      return [...currentMessages, ...convertedAIMessages];
+    }
+
+    // For lobby channel with entity, also show AI messages (legacy behavior)
+    if (activeChannelId === "lobby") {
+      const convertedAIMessages: Message[] = aiMessages.map((msg) => {
+        let content = "";
+        if (typeof msg.content === "string") {
+          content = msg.content;
+        } else if (msg.parts) {
+          content = msg.parts
+            .filter(
+              (part): part is { type: "text"; text: string } =>
+                part.type === "text",
+            )
+            .map((part) => part.text)
+            .join("");
+        }
+
+        return {
+          id: msg.id,
+          timestamp: new Date(),
+          username: msg.role === "user" ? "You" : entityName,
+          content,
+          type: "message" as const,
+        };
+      });
+
+      return [...currentMessages, ...convertedAIMessages];
+    }
+
+    return currentMessages;
+  }, [
+    currentMessages,
+    aiMessages,
+    entityName,
+    isCurrentChannelQuery,
+    activeChannelId,
+  ]);
+
+  const isStreaming = status === "streaming";
+
+  // Add system message to current channel
+  const addSystemMessage = useCallback(
+    (content: string) => {
+      const message: Message = {
+        id: `sys-${Date.now()}`,
+        timestamp: new Date(),
+        username: "***",
+        content,
+        type: "system",
+      };
+
+      setMessageCache((prev) => ({
+        ...prev,
+        [activeChannelId]: [...(prev[activeChannelId] || []), message],
+      }));
+    },
+    [activeChannelId],
+  );
+
+  // Add action message to current channel
+  const addActionMessage = useCallback(
+    (username: string, content: string) => {
+      const message: Message = {
+        id: `action-${Date.now()}`,
+        timestamp: new Date(),
+        username,
+        content,
+        type: "action",
+      };
+
+      setMessageCache((prev) => ({
+        ...prev,
+        [activeChannelId]: [...(prev[activeChannelId] || []), message],
+      }));
+    },
+    [activeChannelId],
+  );
+
+  // Handle command result
+  const handleCommandResult = useCallback(
+    async (result: CommandResult) => {
+      switch (result.action) {
+        case "system_message":
+          if (result.message) {
+            addSystemMessage(result.message);
+          }
+          break;
+
+        case "switch_channel":
+          if (result.data?.channelId) {
+            setActiveChannelId(result.data.channelId);
+            setShowChannels(false);
+          }
+          break;
+
+        case "open_query":
+          if (result.data?.targetUserId && result.data?.targetUsername) {
+            // Create/open query window via API
+            await fetch("/api/channels", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "open_query",
+                targetUserId: result.data.targetUserId,
+                targetUsername: result.data.targetUsername,
+              }),
+            });
+
+            // Refresh channel state
+            const response = await fetch("/api/channels");
+            const data = await response.json();
+            if (data.success && data.data) {
+              setChannelState(data.data);
+            }
+
+            // Switch to query window
+            const queryId = getQueryWindowId(result.data.targetUserId);
+            setActiveChannelId(queryId);
+          }
+          break;
+
+        case "close_query":
+          if (result.data?.channelId) {
+            // Close query via API
+            await fetch("/api/channels", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "close_query",
+                channelId: result.data.channelId,
+              }),
+            });
+
+            // Refresh channel state
+            const response = await fetch("/api/channels");
+            const data = await response.json();
+            if (data.success && data.data) {
+              setChannelState(data.data);
+            }
+
+            // Switch to lobby
+            setActiveChannelId("lobby");
+          }
+          break;
+
+        case "clear_display":
+          // Clear messages for current channel (client-side only)
+          setMessageCache((prev) => ({
+            ...prev,
+            [activeChannelId]: [],
+          }));
+          // Also clear AI messages if in entity context
+          if (
+            activeChannelId === "lobby" ||
+            activeChannelId.includes("anonymous")
+          ) {
+            setAIMessages([]);
+          }
+          break;
+
+        case "action_message":
+          if (result.data?.messageContent) {
+            addActionMessage("You", result.data.messageContent);
+          }
+          break;
+
+        case "send_message":
+          // Open query window and send message
+          if (
+            result.data?.targetUserId &&
+            result.data?.targetUsername &&
+            result.data?.messageContent
+          ) {
+            // Open query
+            await fetch("/api/channels", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "open_query",
+                targetUserId: result.data.targetUserId,
+                targetUsername: result.data.targetUsername,
+              }),
+            });
+
+            // Refresh and switch
+            const response = await fetch("/api/channels");
+            const data = await response.json();
+            if (data.success && data.data) {
+              setChannelState(data.data);
+            }
+
+            const queryId = getQueryWindowId(result.data.targetUserId);
+            setActiveChannelId(queryId);
+
+            // If messaging the entity, send via AI
+            if (result.data.targetUserId.includes("anonymous")) {
+              sendAIMessage({ text: result.data.messageContent });
+            } else {
+              // For NPCs, just show the sent message
+              const message: Message = {
+                id: `msg-${Date.now()}`,
+                timestamp: new Date(),
+                username: "You",
+                content: result.data.messageContent,
+                type: "message",
+              };
+
+              setMessageCache((prev) => ({
+                ...prev,
+                [queryId]: [...(prev[queryId] || []), message],
+              }));
+
+              // TODO: Add NPC response (Phase 6)
+            }
+          }
+          break;
+      }
+    },
+    [
+      activeChannelId,
+      addSystemMessage,
+      addActionMessage,
+      setAIMessages,
+      sendAIMessage,
+    ],
+  );
+
+  // Handle sending a message
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim() || isStreaming) return;
+
+      // Check if it's a command
+      const parsed = parseCommand(content);
+
+      if (parsed) {
+        // Build command context - include ALL users (entities + NPCs)
+        const context: CommandContext = {
+          userId: "dev-user", // Will be replaced with real user ID
+          currentChannel: activeChannelId,
+          channelState: channelState || {
+            channels: [],
+            queryWindows: [],
+            lastUpdated: new Date().toISOString(),
+          },
+          entityUsers: users.map((u) => ({
+            id: u.id.replace("entity-", ""),
+            name: u.username,
+          })),
+        };
+
+        const result = executeCommand(content, context);
+        await handleCommandResult(result);
+      } else {
+        // Regular message
+        if (activeChannelId === "lobby" || isCurrentChannelQuery) {
+          // Send to AI for entity interaction
+          sendAIMessage({ text: content });
+
+          // Also persist user message to R2
+          await fetch("/api/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              channelId: activeChannelId,
+              content,
+              username: "You",
+              type: "message",
+            }),
+          });
+        } else {
+          // Just add message to channel (no AI response)
+          const message: Message = {
+            id: `msg-${Date.now()}`,
+            timestamp: new Date(),
+            username: "You",
+            content,
+            type: "message",
+          };
+
+          setMessageCache((prev) => ({
+            ...prev,
+            [activeChannelId]: [...(prev[activeChannelId] || []), message],
+          }));
+
+          // Persist message to R2
+          await fetch("/api/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              channelId: activeChannelId,
+              content,
+              username: "You",
+              type: "message",
+            }),
+          });
+        }
       }
 
-      return {
-        id: msg.id,
-        timestamp: new Date(),
-        username: msg.role === "user" ? "You" : entityName,
-        content,
-        type: "message" as const,
-      };
-    });
+      setInput("");
+    },
+    [
+      isStreaming,
+      activeChannelId,
+      channelState,
+      users,
+      handleCommandResult,
+      sendAIMessage,
+      isCurrentChannelQuery,
+    ],
+  );
 
-    return [...ircMessages, ...convertedAIMessages];
-  }, [ircMessages, aiMessages, entityName]);
+  // Handle channel selection
+  const handleChannelSelect = useCallback(
+    async (channelId: string) => {
+      // Mark current channel as read before switching
+      if (activeChannelId !== channelId) {
+        await fetch("/api/channels", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "mark_read",
+            channelId: activeChannelId,
+          }),
+        });
+      }
 
-  // Check if streaming
-  const isStreaming = status === "streaming";
+      setActiveChannelId(channelId);
+      setShowChannels(false);
+
+      // Refresh channel state to update unread counts
+      const response = await fetch("/api/channels");
+      const data = await response.json();
+      if (data.success && data.data) {
+        setChannelState(data.data);
+      }
+    },
+    [activeChannelId],
+  );
+
+  // Handle locked channel click
+  const handleLockedChannelClick = useCallback((channelId: string) => {
+    // Show "channel is locked" message
+    const message: Message = {
+      id: `locked-${Date.now()}`,
+      timestamp: new Date(),
+      username: "***",
+      content: `Channel #${channelId} is locked.`,
+      type: "system",
+    };
+
+    setMessageCache((prev) => ({
+      ...prev,
+      [prev[channelId] ? channelId : "lobby"]: [
+        ...(prev["lobby"] || []),
+        message,
+      ],
+    }));
+  }, []);
 
   // Handle keyboard show/hide for iOS (native only)
   useEffect(() => {
@@ -205,25 +746,11 @@ export default function HomeContent() {
     scrollToBottom();
   }, [allMessages, isStreaming]);
 
-  // Scroll to bottom when keyboard appears
   useEffect(() => {
     if (keyboardHeight > 0) {
       setTimeout(scrollToBottom, 100);
     }
   }, [keyboardHeight]);
-
-  // Handle sending a message
-  const handleSendMessage = (content: string) => {
-    if (content.trim() && !isStreaming) {
-      sendMessage({ text: content });
-      setInput("");
-    }
-  };
-
-  const handleChannelSelect = (channelId: string) => {
-    setActiveChannelId(channelId);
-    setShowChannels(false);
-  };
 
   // Format current time for status bar
   const formatStatusTime = () => {
@@ -243,6 +770,14 @@ export default function HomeContent() {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Get display name for current channel
+  const channelDisplayName = useMemo(() => {
+    if (isCurrentChannelQuery && activeChannel) {
+      return `[${(activeChannel as { targetUsername?: string }).targetUsername || "Query"}]`;
+    }
+    return `#${activeChannel?.name || "lobby"}`;
+  }, [activeChannel, isCurrentChannelQuery]);
 
   return (
     <div
@@ -287,9 +822,11 @@ export default function HomeContent() {
           }`}
         >
           <ChannelList
-            channels={channels}
+            channels={channelListItems}
+            queryWindows={queryWindowItems}
             activeChannelId={activeChannelId}
             onChannelSelect={handleChannelSelect}
+            onLockedChannelClick={handleLockedChannelClick}
             onClose={() => setShowChannels(false)}
           />
         </aside>
@@ -298,6 +835,18 @@ export default function HomeContent() {
         <main className="flex-1 flex flex-col min-w-0">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-1 py-1">
+            {loadingChannel && (
+              <div className="flex leading-snug">
+                <span className="text-irc-timestamp">[{statusTime}]</span>
+                <span className="w-24 text-right shrink-0 px-1 text-irc-timestamp">
+                  --
+                </span>
+                <span className="text-irc-timestamp animate-pulse">
+                  Loading...
+                </span>
+              </div>
+            )}
+
             {allMessages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
@@ -334,7 +883,12 @@ export default function HomeContent() {
             input={input}
             onInputChange={(e) => setInput(e.target.value)}
             onSendMessage={handleSendMessage}
-            channelName={activeChannel?.name || "lobby"}
+            channelName={
+              isCurrentChannelQuery
+                ? (activeChannel as { targetUsername?: string })
+                    ?.targetUsername || "Query"
+                : activeChannel?.name || "lobby"
+            }
             keyboardVisible={keyboardHeight > 0}
             disabled={isStreaming}
           />
@@ -358,28 +912,38 @@ export default function HomeContent() {
           <span className="text-irc-timestamp">[</span>
           <span className="text-irc-green">AnomaNet</span>
           <span className="text-irc-timestamp">]</span>
-          <span className="text-irc-cyan">#{activeChannel?.name}</span>
-          <span className="text-irc-timestamp">(+cnt)</span>
+          <span
+            className={
+              isCurrentChannelQuery ? "text-irc-magenta" : "text-irc-cyan"
+            }
+          >
+            {channelDisplayName}
+          </span>
+          {!isCurrentChannelQuery && (
+            <span className="text-irc-timestamp">(+cnt)</span>
+          )}
         </div>
 
         {/* Center: channel activity indicators */}
         <div className="hidden md:flex items-center gap-1">
-          {channels.map((ch, i) => (
-            <span
-              key={ch.id}
-              className={
-                ch.unreadCount > 0
-                  ? "text-irc-highlight"
-                  : ch.id === activeChannelId
-                    ? "text-irc-bright-white"
-                    : "text-irc-timestamp"
-              }
-            >
-              {i + 1}
-              {ch.unreadCount > 0 && `(${ch.unreadCount})`}
-              {i < channels.length - 1 && ","}
-            </span>
-          ))}
+          {channelListItems
+            .filter((ch) => !ch.hidden)
+            .map((ch, i, arr) => (
+              <span
+                key={ch.id}
+                className={
+                  ch.unreadCount > 0
+                    ? "text-irc-highlight"
+                    : ch.id === activeChannelId
+                      ? "text-irc-bright-white"
+                      : "text-irc-timestamp"
+                }
+              >
+                {i + 1}
+                {ch.unreadCount > 0 && `(${ch.unreadCount})`}
+                {i < arr.length - 1 && ","}
+              </span>
+            ))}
         </div>
 
         {/* Right: mobile menu buttons */}

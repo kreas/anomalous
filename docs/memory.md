@@ -64,3 +64,48 @@ A running log of design and coding decisions made during development.
 - For development, server-side API routes are the simplest approach
 
 ---
+
+## 2026-01-18: Phase 2 Channel System - Hourly Message Chunking
+
+**Context:** Need to persist channel message history to R2 without creating excessive small files.
+
+**Decision:** Chunk messages by hour using timestamp-based keys (e.g., `2026-01-18T15.json`).
+
+**Rationale:**
+- One file per message would create too many R2 operations
+- One file per channel would grow unboundedly large
+- Hourly chunks balance file count vs. file size
+- Easy pagination: load latest 1-2 chunks for initial view
+- Chunks can be cleaned up or archived independently
+
+---
+
+## 2026-01-18: Phase 2 Command System - Extensible Registry Pattern
+
+**Context:** IRC-style commands need to be easy to add across different phases.
+
+**Decision:** Implement command registry with standardized interfaces (`Command`, `CommandContext`, `CommandResult`).
+
+**Rationale:**
+- Single `registerCommand()` call to add new commands
+- Command handlers return action types for UI to process
+- Context object provides all necessary state
+- Easy to add Phase 3+ commands (`/signal`, `/search`, `/solve`)
+- Aliases support multiple command names (e.g., `/j` for `/join`)
+
+---
+
+## 2026-01-18: Phase 2 Query Windows - Channel-like Private Messages
+
+**Context:** IRC /msg creates "query windows" for private conversations.
+
+**Decision:** Model query windows as a special channel type stored alongside regular channels.
+
+**Rationale:**
+- Reuses existing channel infrastructure (unread counts, switching, etc.)
+- Query window ID format `query-{targetUserId}` clearly identifies target
+- Separate `queryWindows` array in channel state keeps them organized
+- Same message persistence path pattern works for queries
+- Entity private conversations can have different AI prompt context
+
+---
