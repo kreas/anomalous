@@ -3,13 +3,13 @@
  * Implements US-4.1, US-4.2, US-4.3, US-4.4
  */
 
-import type { Case, Evidence, CaseType, CaseRarity, EvidenceType } from "@/types";
+import type { Case, Evidence, EvidenceType } from "@/types";
 import { saveAvailableCase } from "./cases";
 
 /**
  * Generate a unique case ID
  */
-function generateCaseId(): string {
+function _generateCaseId(): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 6);
   return `case-${timestamp}-${random}`;
@@ -35,7 +35,8 @@ export function createTutorialCase(): Case {
   return {
     id: "tutorial-welcome",
     title: "Welcome Protocol",
-    description: "Your welcome message was corrupted during transfer. Recover it.",
+    description:
+      "Your welcome message was corrupted during transfer. Recover it.",
     briefing: `When you connected to AnomaNet, your welcome message was corrupted during the transfer. This is unusual - the system rarely loses data.
 
 Your task: Find and examine the corrupted data fragment to recover your welcome message.
@@ -71,7 +72,8 @@ export function createTutorialEvidence(): Evidence {
   return {
     id: "tutorial-welcome-data",
     name: "Corrupted Welcome Data",
-    description: "A fragment of your original welcome message, partially corrupted.",
+    description:
+      "A fragment of your original welcome message, partially corrupted.",
     type: "data_fragment",
     rarity: "common",
     content: `W█lcome to An██aNet, new us██.
@@ -112,7 +114,8 @@ function createSilentUserCase(): Case {
   return {
     id: "case-silent-user",
     title: "Silent User",
-    description: "A regular user hasn't logged in for days. Their last message was cryptic.",
+    description:
+      "A regular user hasn't logged in for days. Their last message was cryptic.",
     briefing: `User "NightOwl" was active daily for months, then suddenly went silent 5 days ago. Their last message in #off-topic was: "They're watching. I have to go dark."
 
 Investigate what happened to NightOwl. Was it paranoia, or did they discover something they shouldn't have?
@@ -141,7 +144,8 @@ function createDataLeakCase(): Case {
   return {
     id: "case-data-leak",
     title: "The Leak",
-    description: "Private conversation logs are appearing in public channels. Find the source.",
+    description:
+      "Private conversation logs are appearing in public channels. Find the source.",
     briefing: `Someone is leaking private conversations to #off-topic. The leaked logs contain sensitive information - user disputes, private confessions, personal data.
 
 The leaker seems to have access to private message logs. Find out who they are and how they're getting this access.
@@ -199,7 +203,8 @@ function createBrokerFirstSaleCase(): Case {
   return {
     id: "case-broker-intro",
     title: "The Broker's First Sale",
-    description: "Someone called DataMiner is selling information. Investigate their operation.",
+    description:
+      "Someone called DataMiner is selling information. Investigate their operation.",
     briefing: `A user named "DataMiner" has been advertising information for sale in various channels. They claim to have access to private data, old logs, and even user credentials.
 
 This could be a serious security breach. Investigate DataMiner's operation:
@@ -236,7 +241,8 @@ function createLockedOutCase(): Case {
   return {
     id: "case-locked-out",
     title: "Locked Out",
-    description: "Gain access to a locked private channel to retrieve important data.",
+    description:
+      "Gain access to a locked private channel to retrieve important data.",
     briefing: `There's a private channel called #vault-7 that contains archived data from AnomaNet's early days. The channel has been locked for years, and the original operators are long gone.
 
 Someone needs that data. Find a way in.

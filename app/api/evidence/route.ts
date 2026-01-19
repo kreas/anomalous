@@ -14,7 +14,6 @@ import {
   getUnexaminedCount,
   getEvidenceByType,
   addEvidence,
-  getConnections,
 } from "@/lib/evidence";
 import { formatEvidenceContent } from "@/lib/evidence-formatters";
 

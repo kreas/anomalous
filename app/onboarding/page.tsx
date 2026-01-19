@@ -121,11 +121,8 @@ export default function OnboardingPage() {
           {/* Avatar display */}
           <div className="flex items-center gap-4 mb-6 p-3 bg-irc-input-bg border border-irc-border">
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Discord avatar"
-                className="w-16 h-16"
-              />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="Discord avatar" className="w-16 h-16" />
             ) : (
               <div className="w-16 h-16 bg-irc-border flex items-center justify-center text-irc-timestamp">
                 ?

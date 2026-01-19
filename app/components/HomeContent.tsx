@@ -20,7 +20,6 @@ import {
   executeCommand,
   type CommandContext,
   type CommandResult,
-  type ApiCallConfig,
 } from "@/lib/commands";
 import type { Case, Evidence } from "@/types";
 import { getChannelIntro } from "@/lib/channel-intros";
@@ -268,19 +267,14 @@ export default function HomeContent() {
 
       // Persist each new assistant message
       newAssistantMessages.forEach(async (msg) => {
-        // Extract content
-        let content = "";
-        if (typeof msg.content === "string") {
-          content = msg.content;
-        } else if (msg.parts) {
-          content = msg.parts
-            .filter(
-              (part): part is { type: "text"; text: string } =>
-                part.type === "text",
-            )
-            .map((part) => part.text)
-            .join("");
-        }
+        // Extract content from parts
+        const content = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text",
+          )
+          .map((part) => part.text)
+          .join("");
 
         if (content) {
           // Persist to R2 using the channel where conversation started
@@ -327,18 +321,13 @@ export default function HomeContent() {
     // For query windows with the entity, include AI messages
     if (isCurrentChannelQuery && activeChannelId.includes("anonymous")) {
       const convertedAIMessages: Message[] = aiMessages.map((msg) => {
-        let content = "";
-        if (typeof msg.content === "string") {
-          content = msg.content;
-        } else if (msg.parts) {
-          content = msg.parts
-            .filter(
-              (part): part is { type: "text"; text: string } =>
-                part.type === "text",
-            )
-            .map((part) => part.text)
-            .join("");
-        }
+        const content = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text",
+          )
+          .map((part) => part.text)
+          .join("");
 
         return {
           id: msg.id,
@@ -355,18 +344,13 @@ export default function HomeContent() {
     // For lobby channel with entity, also show AI messages (legacy behavior)
     if (activeChannelId === "lobby") {
       const convertedAIMessages: Message[] = aiMessages.map((msg) => {
-        let content = "";
-        if (typeof msg.content === "string") {
-          content = msg.content;
-        } else if (msg.parts) {
-          content = msg.parts
-            .filter(
-              (part): part is { type: "text"; text: string } =>
-                part.type === "text",
-            )
-            .map((part) => part.text)
-            .join("");
-        }
+        const content = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text",
+          )
+          .map((part) => part.text)
+          .join("");
 
         return {
           id: msg.id,

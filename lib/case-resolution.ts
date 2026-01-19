@@ -26,7 +26,7 @@ const OUTCOME_MULTIPLIERS: Record<CaseOutcome, number> = {
  */
 function checkEvidenceRequirement(
   requirement: Case["requiredEvidence"][0],
-  evidence: Evidence[]
+  evidence: Evidence[],
 ): { satisfied: boolean; count: number } {
   // Filter evidence by type
   let matchingEvidence = evidence.filter((e) => e.type === requirement.type);
@@ -34,7 +34,7 @@ function checkEvidenceRequirement(
   // If specific IDs required, filter further
   if (requirement.specific && requirement.specific.length > 0) {
     matchingEvidence = matchingEvidence.filter((e) =>
-      requirement.specific!.includes(e.id)
+      requirement.specific!.includes(e.id),
     );
   }
 
@@ -49,7 +49,7 @@ function checkEvidenceRequirement(
  */
 export function calculateEvidenceCompleteness(
   caseData: Case,
-  evidence: Evidence[]
+  evidence: Evidence[],
 ): number {
   if (caseData.requiredEvidence.length === 0) {
     return 1; // No requirements = complete
@@ -72,7 +72,7 @@ export function calculateEvidenceCompleteness(
  */
 export function getMissingEvidenceHints(
   caseData: Case,
-  evidence: Evidence[]
+  evidence: Evidence[],
 ): string[] {
   const hints: string[] = [];
 
@@ -96,7 +96,7 @@ export function getMissingEvidenceHints(
 export function checkTwistConditions(
   caseData: Case,
   evidence: Evidence[],
-  connections: EvidenceConnection[]
+  connections: EvidenceConnection[],
 ): boolean {
   // For now, twist requires:
   // 1. All evidence found
@@ -106,7 +106,7 @@ export function checkTwistConditions(
 
   // Check for case-relevant connections
   const relevantConnections = connections.filter(
-    (c) => c.reward?.caseProgress === caseData.id
+    (c) => c.reward?.caseProgress === caseData.id,
   );
 
   // Twist triggered if player found a special connection
@@ -119,12 +119,15 @@ export function checkTwistConditions(
 export function calculateOutcome(
   caseData: Case,
   evidence: Evidence[],
-  connections: EvidenceConnection[]
+  connections: EvidenceConnection[],
 ): CaseOutcome {
   const completeness = calculateEvidenceCompleteness(caseData, evidence);
 
   // Check for twist first (requires full evidence + connection)
-  if (completeness >= 1 && checkTwistConditions(caseData, evidence, connections)) {
+  if (
+    completeness >= 1 &&
+    checkTwistConditions(caseData, evidence, connections)
+  ) {
     return "twist";
   }
 
@@ -148,7 +151,7 @@ export function calculateOutcome(
  */
 export function calculateRewards(
   caseData: Case,
-  outcome: CaseOutcome
+  outcome: CaseOutcome,
 ): CaseRewards {
   const multiplier = OUTCOME_MULTIPLIERS[outcome];
   const base = caseData.rewards;
@@ -158,7 +161,8 @@ export function calculateRewards(
     fragments: Math.floor(base.fragments * multiplier),
     entityXp: Math.floor(base.entityXp * multiplier),
     bonusEvidence: outcome === "twist" ? base.bonusEvidence : undefined,
-    unlocks: outcome === "solved" || outcome === "twist" ? base.unlocks : undefined,
+    unlocks:
+      outcome === "solved" || outcome === "twist" ? base.unlocks : undefined,
   };
 }
 
@@ -171,8 +175,7 @@ export function getOutcomeDescription(outcome: CaseOutcome): string {
       "Case solved! Your investigation was thorough and your theory correct.",
     partial:
       "Case partially solved. You were on the right track, but some details remain unclear.",
-    cold:
-      "Case gone cold. Insufficient evidence to reach a conclusion, but the case file has been archived.",
+    cold: "Case gone cold. Insufficient evidence to reach a conclusion, but the case file has been archived.",
     twist:
       "TWIST REVEALED! Your investigation uncovered a deeper truth that changes everything.",
   };
@@ -219,7 +222,7 @@ export function resolveCase(
   caseData: Case,
   evidence: Evidence[],
   connections: EvidenceConnection[],
-  theory: string
+  _theory: string,
 ): ResolutionResult {
   const completeness = calculateEvidenceCompleteness(caseData, evidence);
 

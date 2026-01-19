@@ -16,6 +16,18 @@ const eslintConfig = defineConfig([
     "android/**",
     "ios/**",
   ]),
+  {
+    rules: {
+      // Allow underscore-prefixed unused variables (convention for intentionally unused)
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

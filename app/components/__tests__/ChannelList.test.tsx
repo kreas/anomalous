@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ChannelList, Channel } from "../ChannelList";
+import { ChannelList, ChannelListItem } from "../ChannelList";
 
 describe("ChannelList", () => {
-  const mockChannels: Channel[] = [
+  const mockChannels: ChannelListItem[] = [
     { id: "1", name: "lobby", unreadCount: 0 },
     { id: "2", name: "mysteries", unreadCount: 3 },
     { id: "3", name: "tech-support", unreadCount: 0 },

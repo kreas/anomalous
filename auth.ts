@@ -43,9 +43,7 @@ declare module "next-auth" {
       discordUsername?: string;
     };
   }
-}
 
-declare module "next-auth/jwt" {
   interface JWT {
     discordAvatar?: string;
     discordUsername?: string;

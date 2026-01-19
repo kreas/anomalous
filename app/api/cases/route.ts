@@ -15,11 +15,7 @@ import {
   completeCase,
   MAX_ACTIVE_CASES,
 } from "@/lib/cases";
-import {
-  getAllEvidence,
-  getConnections,
-  getEvidenceForCase,
-} from "@/lib/evidence";
+import { getAllEvidence, getConnections } from "@/lib/evidence";
 import {
   resolveCase,
   getMissingEvidenceHints,

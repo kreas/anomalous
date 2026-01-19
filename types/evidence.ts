@@ -31,6 +31,7 @@ export type EvidenceRarity = "common" | "uncommon" | "rare" | "legendary";
 export type EvidenceSource =
   | "signal" // From /signal pulls (Phase 4)
   | "case_reward" // Awarded from case completion
+  | "case_accept" // Granted when accepting a case
   | "exploration" // Found through gameplay
   | "npc" // Given by NPC
   | "tutorial"; // Tutorial grant
@@ -149,7 +150,9 @@ export function isValidEvidence(obj: unknown): obj is Evidence {
 /**
  * Type guard for EvidenceInventory
  */
-export function isValidEvidenceInventory(obj: unknown): obj is EvidenceInventory {
+export function isValidEvidenceInventory(
+  obj: unknown,
+): obj is EvidenceInventory {
   if (typeof obj !== "object" || obj === null) return false;
   const inv = obj as Record<string, unknown>;
   return (
@@ -162,7 +165,9 @@ export function isValidEvidenceInventory(obj: unknown): obj is EvidenceInventory
 /**
  * Type guard for EvidenceConnection
  */
-export function isValidEvidenceConnection(obj: unknown): obj is EvidenceConnection {
+export function isValidEvidenceConnection(
+  obj: unknown,
+): obj is EvidenceConnection {
   if (typeof obj !== "object" || obj === null) return false;
   const c = obj as Record<string, unknown>;
   return (
