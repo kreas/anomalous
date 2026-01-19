@@ -2,7 +2,7 @@
  * IRC command registry and handlers
  */
 
-import type { ChannelState } from "@/types";
+import type { ChannelState, Case, Evidence, EvidenceConnection } from "@/types";
 
 /**
  * Parsed command from user input
@@ -34,7 +34,21 @@ export type CommandAction =
   | "action_message"
   | "clear_display"
   | "send_message"
-  | "none";
+  | "none"
+  // Case actions (Phase 3)
+  | "case_accepted"
+  | "case_list"
+  | "case_detail"
+  | "case_abandoned"
+  // Evidence actions (Phase 3)
+  | "evidence_list"
+  | "evidence_detail"
+  | "evidence_examined"
+  | "connection_found"
+  | "connection_failed"
+  // Solve actions (Phase 3)
+  | "solve_prompt"
+  | "case_resolved";
 
 /**
  * Result of command execution
@@ -48,6 +62,17 @@ export interface CommandResult {
     targetUserId?: string;
     targetUsername?: string;
     messageContent?: string;
+    // Case data (Phase 3)
+    case?: Case;
+    cases?: Case[];
+    evidence?: Evidence[];
+    // Evidence data (Phase 3)
+    evidenceItem?: Evidence;
+    evidenceList?: Evidence[];
+    newCount?: number;
+    content?: string;
+    connection?: EvidenceConnection;
+    evidenceIds?: [string, string];
   };
 }
 
@@ -59,7 +84,10 @@ export interface Command {
   aliases?: string[];
   description: string;
   usage: string;
-  handler: (args: string[], context: CommandContext) => CommandResult;
+  handler: (
+    args: string[],
+    context: CommandContext,
+  ) => CommandResult | Promise<CommandResult>;
 }
 
 /**
@@ -138,10 +166,10 @@ export function parseCommand(input: string): ParsedCommand | null {
 /**
  * Execute a command from user input
  */
-export function executeCommand(
+export async function executeCommand(
   input: string,
   context: CommandContext,
-): CommandResult {
+): Promise<CommandResult> {
   const parsed = parseCommand(input);
 
   if (!parsed) {
@@ -453,5 +481,298 @@ registerCommand({
       message: `Users:\n${userList}`,
       action: "system_message",
     };
+  },
+});
+
+// =============================================================================
+// Case Commands (Phase 3)
+// =============================================================================
+
+import {
+  getAvailableCases,
+  getAvailableCase,
+  acceptCase as acceptCaseFromStorage,
+  getUserCases,
+  getActiveCase,
+  abandonCase as abandonCaseFromStorage,
+  MAX_ACTIVE_CASES,
+} from "./cases";
+
+/**
+ * /accept - Accept a case from #mysteries
+ */
+registerCommand({
+  name: "accept",
+  aliases: ["take"],
+  description: "Accept a case from #mysteries",
+  usage: "/accept <case_id>",
+  handler: async (args, context) => {
+    if (args.length === 0) {
+      return {
+        success: false,
+        message: "Usage: /accept <case_id>",
+        action: "system_message",
+      };
+    }
+
+    const caseId = args[0];
+
+    try {
+      const acceptedCase = await acceptCaseFromStorage(context.userId, caseId);
+
+      return {
+        success: true,
+        message: `Case accepted: ${acceptedCase.title}\n\n${acceptedCase.briefing}`,
+        action: "case_accepted",
+        data: {
+          case: acceptedCase,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to accept case";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * /cases - List active cases
+ */
+registerCommand({
+  name: "cases",
+  aliases: ["mycases", "active"],
+  description: "List your active cases",
+  usage: "/cases",
+  handler: async (_args, context) => {
+    try {
+      const { active } = await getUserCases(context.userId);
+
+      if (active.length === 0) {
+        return {
+          success: true,
+          message: `No active cases. Visit #mysteries to find cases.\nYou can have up to ${MAX_ACTIVE_CASES} active cases.`,
+          action: "system_message",
+        };
+      }
+
+      const caseList = active
+        .map((c, i) => {
+          const statusBadge = `[${c.status.toUpperCase()}]`;
+          const evidenceCount = c.requiredEvidence.reduce(
+            (sum, e) => sum + e.count,
+            0,
+          );
+          return `${i + 1}. ${statusBadge} ${c.title} (${c.type})\n   Evidence needed: ${evidenceCount} items`;
+        })
+        .join("\n\n");
+
+      return {
+        success: true,
+        message: `Active Cases (${active.length}/${MAX_ACTIVE_CASES}):\n\n${caseList}\n\nUse /case <id> for details`,
+        action: "case_list",
+        data: {
+          cases: active,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load cases";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * /case - Show case details
+ */
+registerCommand({
+  name: "case",
+  aliases: ["caseinfo"],
+  description: "Show details for a specific case",
+  usage: "/case <case_id>",
+  handler: async (args, context) => {
+    if (args.length === 0) {
+      return {
+        success: false,
+        message: "Usage: /case <case_id>",
+        action: "system_message",
+      };
+    }
+
+    const caseId = args[0];
+
+    try {
+      // First check active cases
+      let caseData = await getActiveCase(context.userId, caseId);
+
+      // If not active, check available cases
+      if (!caseData) {
+        caseData = await getAvailableCase(caseId);
+      }
+
+      if (!caseData) {
+        return {
+          success: false,
+          message: `Case not found: ${caseId}`,
+          action: "system_message",
+        };
+      }
+
+      const isActive = caseData.status !== "available";
+      const statusLine = isActive
+        ? `Status: ${caseData.status.toUpperCase()}`
+        : "Status: Available (use /accept to take this case)";
+
+      const evidenceReqs = caseData.requiredEvidence
+        .map(
+          (e) =>
+            `  - ${e.type}: ${e.count} needed${e.hint ? ` (${e.hint})` : ""}`,
+        )
+        .join("\n");
+
+      const rewards = `XP: ${caseData.rewards.xp} | Fragments: ${caseData.rewards.fragments}`;
+
+      const details = [
+        `=== ${caseData.title} ===`,
+        `Type: ${caseData.type} | Rarity: ${caseData.rarity.toUpperCase()}`,
+        statusLine,
+        "",
+        caseData.briefing,
+        "",
+        "Evidence Required:",
+        evidenceReqs,
+        "",
+        `Rewards: ${rewards}`,
+      ].join("\n");
+
+      return {
+        success: true,
+        message: details,
+        action: "case_detail",
+        data: {
+          case: caseData,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load case";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * /abandon - Abandon an active case
+ */
+registerCommand({
+  name: "abandon",
+  aliases: ["drop", "giveup"],
+  description: "Abandon an active case",
+  usage: "/abandon <case_id>",
+  handler: async (args, context) => {
+    if (args.length === 0) {
+      return {
+        success: false,
+        message: "Usage: /abandon <case_id>",
+        action: "system_message",
+      };
+    }
+
+    const caseId = args[0];
+
+    try {
+      // Check if case exists in active list
+      const activeCase = await getActiveCase(context.userId, caseId);
+      if (!activeCase) {
+        return {
+          success: false,
+          message: `Case not found in your active cases: ${caseId}`,
+          action: "system_message",
+        };
+      }
+
+      const abandonedCase = await abandonCaseFromStorage(
+        context.userId,
+        caseId,
+      );
+
+      return {
+        success: true,
+        message: `Case abandoned: ${abandonedCase.title}\nThe case has been moved to your history.`,
+        action: "case_abandoned",
+        data: {
+          case: abandonedCase,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to abandon case";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
+  },
+});
+
+/**
+ * /mysteries - Show available cases (shortcut to viewing #mysteries content)
+ */
+registerCommand({
+  name: "mysteries",
+  aliases: ["available"],
+  description: "Show available cases from #mysteries",
+  usage: "/mysteries",
+  handler: async () => {
+    try {
+      const cases = await getAvailableCases();
+
+      if (cases.length === 0) {
+        return {
+          success: true,
+          message: "No cases available at this time. Check back later.",
+          action: "system_message",
+        };
+      }
+
+      const caseList = cases
+        .slice(0, 10) // Show max 10
+        .map((c) => {
+          const rarityBadge = `[${c.rarity.toUpperCase()}]`;
+          return `${rarityBadge} ${c.title}\n  ${c.description}\n  Reward: ${c.rewards.fragments} Fragments, ${c.rewards.xp} XP\n  /accept ${c.id}`;
+        })
+        .join("\n\n");
+
+      return {
+        success: true,
+        message: `=== Available Cases ===\n\n${caseList}`,
+        action: "case_list",
+        data: {
+          cases,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load cases";
+      return {
+        success: false,
+        message,
+        action: "system_message",
+      };
+    }
   },
 });

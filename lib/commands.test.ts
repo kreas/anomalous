@@ -126,18 +126,18 @@ describe("commands", () => {
 
   describe("executeCommand", () => {
     describe("/help", () => {
-      it("should list all commands when called without args", () => {
+      it("should list all commands when called without args", async () => {
         const context = createTestContext();
-        const result = executeCommand("/help", context);
+        const result = await executeCommand("/help", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("system_message");
         expect(result.message).toContain("Available commands:");
       });
 
-      it("should show help for a specific command", () => {
+      it("should show help for a specific command", async () => {
         const context = createTestContext();
-        const result = executeCommand("/help join", context);
+        const result = await executeCommand("/help join", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("system_message");
@@ -146,36 +146,36 @@ describe("commands", () => {
     });
 
     describe("/join", () => {
-      it("should switch to an unlocked channel", () => {
+      it("should switch to an unlocked channel", async () => {
         const context = createTestContext();
-        const result = executeCommand("/join #mysteries", context);
+        const result = await executeCommand("/join #mysteries", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("switch_channel");
         expect(result.data?.channelId).toBe("mysteries");
       });
 
-      it("should reject joining a locked channel", () => {
+      it("should reject joining a locked channel", async () => {
         const context = createTestContext();
-        const result = executeCommand("/join #signals", context);
+        const result = await executeCommand("/join #signals", context);
 
         expect(result.success).toBe(false);
         expect(result.action).toBe("system_message");
         expect(result.message).toContain("locked");
       });
 
-      it("should reject unknown channels", () => {
+      it("should reject unknown channels", async () => {
         const context = createTestContext();
-        const result = executeCommand("/join #unknown", context);
+        const result = await executeCommand("/join #unknown", context);
 
         expect(result.success).toBe(false);
         expect(result.action).toBe("system_message");
         expect(result.message).toContain("not found");
       });
 
-      it("should show usage when no channel provided", () => {
+      it("should show usage when no channel provided", async () => {
         const context = createTestContext();
-        const result = executeCommand("/join", context);
+        const result = await executeCommand("/join", context);
 
         expect(result.success).toBe(false);
         expect(result.message).toContain("Usage:");
@@ -183,18 +183,18 @@ describe("commands", () => {
     });
 
     describe("/me", () => {
-      it("should create an action message", () => {
+      it("should create an action message", async () => {
         const context = createTestContext();
-        const result = executeCommand("/me waves", context);
+        const result = await executeCommand("/me waves", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("action_message");
         expect(result.data?.messageContent).toBe("waves");
       });
 
-      it("should show usage when no action provided", () => {
+      it("should show usage when no action provided", async () => {
         const context = createTestContext();
-        const result = executeCommand("/me", context);
+        const result = await executeCommand("/me", context);
 
         expect(result.success).toBe(false);
         expect(result.message).toContain("Usage:");
@@ -202,9 +202,9 @@ describe("commands", () => {
     });
 
     describe("/clear", () => {
-      it("should trigger clear display action", () => {
+      it("should trigger clear display action", async () => {
         const context = createTestContext();
-        const result = executeCommand("/clear", context);
+        const result = await executeCommand("/clear", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("clear_display");
@@ -212,9 +212,9 @@ describe("commands", () => {
     });
 
     describe("/msg", () => {
-      it("should open a query window for a known user", () => {
+      it("should open a query window for a known user", async () => {
         const context = createTestContext();
-        const result = executeCommand("/msg Anonymous", context);
+        const result = await executeCommand("/msg Anonymous", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("open_query");
@@ -222,9 +222,12 @@ describe("commands", () => {
         expect(result.data?.targetUsername).toBe("Anonymous");
       });
 
-      it("should send a message when content is provided", () => {
+      it("should send a message when content is provided", async () => {
         const context = createTestContext();
-        const result = executeCommand("/msg Anonymous hello there", context);
+        const result = await executeCommand(
+          "/msg Anonymous hello there",
+          context,
+        );
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("send_message");
@@ -232,17 +235,17 @@ describe("commands", () => {
         expect(result.data?.messageContent).toBe("hello there");
       });
 
-      it("should reject unknown users", () => {
+      it("should reject unknown users", async () => {
         const context = createTestContext();
-        const result = executeCommand("/msg UnknownUser hello", context);
+        const result = await executeCommand("/msg UnknownUser hello", context);
 
         expect(result.success).toBe(false);
         expect(result.message).toContain("not found");
       });
 
-      it("should show usage when no user provided", () => {
+      it("should show usage when no user provided", async () => {
         const context = createTestContext();
-        const result = executeCommand("/msg", context);
+        const result = await executeCommand("/msg", context);
 
         expect(result.success).toBe(false);
         expect(result.message).toContain("Usage:");
@@ -250,20 +253,20 @@ describe("commands", () => {
     });
 
     describe("/part", () => {
-      it("should close a query window", () => {
+      it("should close a query window", async () => {
         const context = createTestContext();
         context.currentChannel = "query-anonymous";
-        const result = executeCommand("/part", context);
+        const result = await executeCommand("/part", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("close_query");
         expect(result.data?.channelId).toBe("query-anonymous");
       });
 
-      it("should reject parting from a regular channel", () => {
+      it("should reject parting from a regular channel", async () => {
         const context = createTestContext();
         context.currentChannel = "lobby";
-        const result = executeCommand("/part", context);
+        const result = await executeCommand("/part", context);
 
         expect(result.success).toBe(false);
         expect(result.message).toContain("query windows");
@@ -271,9 +274,9 @@ describe("commands", () => {
     });
 
     describe("/list", () => {
-      it("should list all visible channels", () => {
+      it("should list all visible channels", async () => {
         const context = createTestContext();
-        const result = executeCommand("/list", context);
+        const result = await executeCommand("/list", context);
 
         expect(result.success).toBe(true);
         expect(result.action).toBe("system_message");
@@ -283,9 +286,9 @@ describe("commands", () => {
     });
 
     describe("unknown command", () => {
-      it("should return an error for unknown commands", () => {
+      it("should return an error for unknown commands", async () => {
         const context = createTestContext();
-        const result = executeCommand("/unknowncommand", context);
+        const result = await executeCommand("/unknowncommand", context);
 
         expect(result.success).toBe(false);
         expect(result.action).toBe("system_message");
